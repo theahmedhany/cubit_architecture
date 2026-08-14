@@ -1,7 +1,22 @@
-import 'package:cubit_architecture/core/helpers/dimensions_helper.dart';
-import 'package:cubit_architecture/core/theme/theme_manager/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+
+import '../../helpers/dimensions_helper.dart';
+import '../../theme/theme_manager/theme_extensions.dart';
+
+enum AppLoadingIndicatorType {
+  fallingDot,
+  staggeredDotsWave,
+  threeRotatingDots,
+  fourRotatingDots,
+  threeArchedCircle,
+  progressiveDots,
+  hexagonDots,
+  beat,
+  twoRotatingArc,
+  twistingDots,
+  waveDots,
+}
 
 class AppLoadingIndicator extends StatelessWidget {
   const AppLoadingIndicator({
@@ -9,7 +24,7 @@ class AppLoadingIndicator extends StatelessWidget {
     this.size,
     this.color,
     this.padding,
-    this.type = AppLoadingIndicatorType.fallingDot,
+    this.type = AppLoadingIndicatorType.threeArchedCircle,
     this.centered = true,
     this.unconstrained = true,
   });
@@ -115,18 +130,4 @@ class _LoadingIndicator extends StatelessWidget {
         return LoadingAnimationWidget.waveDots(color: color, size: size);
     }
   }
-}
-
-enum AppLoadingIndicatorType {
-  fallingDot,
-  staggeredDotsWave,
-  threeRotatingDots,
-  fourRotatingDots,
-  threeArchedCircle,
-  progressiveDots,
-  hexagonDots,
-  beat,
-  twoRotatingArc,
-  twistingDots,
-  waveDots,
 }

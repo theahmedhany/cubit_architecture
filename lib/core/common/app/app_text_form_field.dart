@@ -1,12 +1,11 @@
-import 'package:cubit_architecture/core/helpers/media_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../helpers/asset_helper.dart';
 import '../../helpers/dimensions_helper.dart';
+import '../../helpers/media_helper.dart';
 import '../../helpers/spacing.dart';
-import '../../theme/app_colors/light_app_colors.dart';
 import '../../theme/app_texts/app_text_styles.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
 
@@ -15,6 +14,7 @@ class AppTextFormField extends StatefulWidget {
     super.key,
     required this.hintText,
     this.title,
+    this.helperText,
     this.initialValue,
     this.controller,
     this.keyboardType,
@@ -24,11 +24,14 @@ class AppTextFormField extends StatefulWidget {
     this.inputTextStyle,
     this.hintStyle,
     this.titleTextStyle,
+    this.helperTextStyle,
+    this.errorTextStyle,
     this.focusedBorder,
     this.enabledBorder,
     this.errorBorder,
     this.disabledBorder,
     this.backgroundColor,
+    this.focusedBackgroundColor,
     this.titleColor,
     this.cursorColor,
     this.suffixIconColor,
@@ -48,15 +51,20 @@ class AppTextFormField extends StatefulWidget {
     this.maxLines = 1,
     this.minLines,
     this.maxLength,
+    this.errorMaxLines = 2,
     this.validator,
     this.onTap,
     this.onChanged,
     this.onFieldSubmitted,
     this.focusNode,
-  });
+  }) : assert(
+         !isPassword || maxLines == 1,
+         'isPassword fields must be single line; pass maxLines: 1 or omit it.',
+       );
 
   final String? title;
   final String hintText;
+  final String? helperText;
   final String? initialValue;
   final TextEditingController? controller;
   final TextInputType? keyboardType;
@@ -66,11 +74,14 @@ class AppTextFormField extends StatefulWidget {
   final TextStyle? inputTextStyle;
   final TextStyle? hintStyle;
   final TextStyle? titleTextStyle;
+  final TextStyle? helperTextStyle;
+  final TextStyle? errorTextStyle;
   final InputBorder? focusedBorder;
   final InputBorder? enabledBorder;
   final InputBorder? errorBorder;
   final InputBorder? disabledBorder;
   final Color? backgroundColor;
+  final Color? focusedBackgroundColor;
   final Color? titleColor;
   final Color? cursorColor;
   final Color? suffixIconColor;
@@ -90,6 +101,7 @@ class AppTextFormField extends StatefulWidget {
   final int? maxLines;
   final int? minLines;
   final int? maxLength;
+  final int errorMaxLines;
   final String? Function(String?)? validator;
   final VoidCallback? onTap;
   final ValueChanged<String>? onChanged;
@@ -102,11 +114,48 @@ class AppTextFormField extends StatefulWidget {
 
 class _AppTextFormFieldState extends State<AppTextFormField> {
   late bool _obscureText;
+  late final FocusNode _focusNode;
+  late final bool _ownsFocusNode;
+  bool _hasFocus = false;
 
   @override
   void initState() {
     super.initState();
+
     _obscureText = widget.isPassword;
+    _ownsFocusNode = widget.focusNode == null;
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant AppTextFormField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.isPassword != oldWidget.isPassword) {
+      _obscureText = widget.isPassword;
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+
+    if (_ownsFocusNode) {
+      _focusNode.dispose();
+    }
+
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (_hasFocus != _focusNode.hasFocus) {
+      setState(() => _hasFocus = _focusNode.hasFocus);
+    }
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() => _obscureText = !_obscureText);
   }
 
   @override
@@ -130,7 +179,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
         TextFormField(
           controller: widget.controller,
           initialValue: widget.initialValue,
-          focusNode: widget.focusNode,
+          focusNode: _focusNode,
 
           keyboardType: widget.keyboardType,
           textInputAction: widget.textInputAction,
@@ -146,6 +195,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           autofocus: widget.autofocus,
 
           obscureText: _obscureText,
+          obscuringCharacter: '•',
 
           validator: widget.validator,
 
@@ -157,16 +207,35 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           onTapOutside: (_) => MediaHelper.dismissKeyboard(context),
 
           cursorColor: widget.cursorColor ?? colors.primary600,
+          cursorRadius: const Radius.circular(8),
+          cursorWidth: 2,
 
-          style: widget.inputTextStyle ?? context.f14r,
+          style: (widget.inputTextStyle ?? context.f14r).copyWith(
+            color: widget.enabled ? null : colors.neutral400,
+          ),
 
           decoration: InputDecoration(
             hintText: widget.hintText,
 
+            helperText: widget.helperText,
+            helperMaxLines: 2,
+            helperStyle:
+                widget.helperTextStyle ??
+                context.f12r.copyWith(color: colors.neutral400),
+
+            errorMaxLines: widget.errorMaxLines,
+            errorStyle:
+                widget.errorTextStyle ??
+                context.f12r.copyWith(color: colors.danger600),
+
             counterText: widget.maxLength == null ? '' : null,
 
             filled: true,
-            fillColor: widget.backgroundColor ?? colors.neutral50,
+            fillColor: _hasFocus
+                ? (widget.focusedBackgroundColor ??
+                      widget.backgroundColor ??
+                      colors.neutral50)
+                : (widget.backgroundColor ?? colors.neutral50),
 
             isDense: true,
 
@@ -222,31 +291,32 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
     if (widget.isPassword) {
       return Padding(
         padding: EdgeInsetsDirectional.only(start: 2.radius, end: 4.radius),
-        child: IconButton(
-          onPressed: () {
-            setState(() {
-              _obscureText = !_obscureText;
-            });
-          },
-          splashRadius: 20.radius,
-          icon: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: ScaleTransition(scale: animation, child: child),
-              );
-            },
-            child: SvgPicture.asset(
-              _obscureText
-                  ? AssetHelper.iconSVGPath('hidden_password')
-                  : AssetHelper.iconSVGPath('shown_password'),
-              key: ValueKey(_obscureText),
-              width: 20.radius,
-              height: 20.radius,
-              colorFilter: ColorFilter.mode(
-                widget.suffixIconColor ?? context.customAppColors.neutral500,
-                BlendMode.srcIn,
+        child: Semantics(
+          button: true,
+          label: _obscureText ? 'Show password' : 'Hide password',
+          child: IconButton(
+            onPressed: widget.enabled ? _togglePasswordVisibility : null,
+            splashRadius: 20.radius,
+            tooltip: _obscureText ? 'Show password' : 'Hide password',
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(scale: animation, child: child),
+                );
+              },
+              child: SvgPicture.asset(
+                _obscureText
+                    ? AssetHelper.iconSVGPath('hidden_password')
+                    : AssetHelper.iconSVGPath('shown_password'),
+                key: ValueKey(_obscureText),
+                width: 20.radius,
+                height: 20.radius,
+                colorFilter: ColorFilter.mode(
+                  widget.suffixIconColor ?? context.customAppColors.neutral500,
+                  BlendMode.srcIn,
+                ),
               ),
             ),
           ),
@@ -280,6 +350,8 @@ class _TitleSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.customAppColors;
+
     return RichText(
       text: TextSpan(
         children: [
@@ -287,16 +359,15 @@ class _TitleSection extends StatelessWidget {
             text: title,
             style:
                 titleTextStyle ??
-                context.f16sb.copyWith(
-                  color: titleColor ?? LightAppColors.neutral950,
-                ),
+                context.f16sb.copyWith(color: titleColor ?? colors.neutral950),
           ),
 
-          if (isRequired)
+          if (isRequired) ...[
             TextSpan(
               text: ' *',
-              style: context.f14r.copyWith(color: LightAppColors.danger600),
+              style: context.f14r.copyWith(color: colors.danger600),
             ),
+          ],
         ],
       ),
     );

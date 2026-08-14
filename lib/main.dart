@@ -1,7 +1,3 @@
-import 'package:cubit_architecture/core/di/setup_dependency_injection.dart';
-import 'package:cubit_architecture/core/theme/theme_data/dark_them_data.dart';
-import 'package:cubit_architecture/core/theme/theme_data/light_theme_data.dart';
-import 'package:cubit_architecture/core/theme/theme_manager/theme_extensions.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +8,7 @@ import 'core/cache/app_cache_keys.dart';
 import 'core/cache/secure_storage_helper.dart';
 import 'core/cache/shared_pref_helper.dart';
 import 'core/common/screens/not_found_screen.dart';
+import 'core/di/setup_dependency_injection.dart';
 import 'core/enums/auth_status.dart';
 import 'core/enums/user_role.dart';
 import 'core/helpers/app_constants.dart';
@@ -21,7 +18,10 @@ import 'core/helpers/bloc_observer_helper.dart';
 import 'core/helpers/design_size_helper.dart';
 import 'core/routing/route_manager.dart';
 import 'core/theme/app_texts/app_language.dart';
+import 'core/theme/theme_data/dark_them_data.dart';
+import 'core/theme/theme_data/light_theme_data.dart';
 import 'core/theme/theme_manager/theme_cubit.dart';
+import 'core/theme/theme_manager/theme_extensions.dart';
 import 'features/onboarding/presentation/screens/onboarding_screen.dart';
 
 part 'my_app.dart';

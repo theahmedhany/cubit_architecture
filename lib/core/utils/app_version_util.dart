@@ -112,7 +112,7 @@ class AppVersionUtil {
       CupertinoDialogAction(
         isDefaultAction: true,
         onPressed: storeUrl != null
-            ? () => UrlLauncherUtil.launchURL(url: storeUrl)
+            ? () => UrlLauncherUtil.launchURL(context: ctx, url: storeUrl)
             : null,
         child: Text(
           'update_now'.tr(),

@@ -179,24 +179,24 @@ class NotFoundScreen extends StatelessWidget {
                   verticalGap(12),
 
                   AppButton(
-                    text: mainButtonText ?? context.tr('go_to_login'),
+                    title: mainButtonText ?? context.tr('go_to_login'),
                     onPressed: onMainButtonPressed ?? notFountInitialNavigation,
-                    color: dangerColor,
-                    textColor: backgroundColor,
-                    radius: 14.radius,
+                    buttonColor: dangerColor,
+                    titleColor: backgroundColor,
+                    buttonRadius: 14.radius,
                   ),
 
                   verticalGap(10),
 
                   AppButton(
-                    text: context.tr('go_back'),
+                    title: context.tr('go_back'),
                     onPressed: () {
                       RouteManager.pop();
                     },
-                    color: Colors.transparent,
-                    boxBorder: Border.all(color: dangerColor),
-                    textColor: dangerColor,
-                    radius: 14.radius,
+                    buttonColor: Colors.transparent,
+                    buttonBorder: Border.all(color: dangerColor),
+                    titleColor: dangerColor,
+                    buttonRadius: 14.radius,
                   ),
 
                   verticalGap(MediaHelper.bottomPadding(context)),

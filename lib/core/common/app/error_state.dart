@@ -61,10 +61,12 @@ class ErrorState extends StatelessWidget {
 
               AppButton(
                 onPressed: onRetry,
-                text: '',
-                color: context.customAppColors.danger100,
-                boxBorder: Border.all(color: context.customAppColors.danger600),
-                radius: 50.radius,
+                title: '',
+                buttonColor: context.customAppColors.danger100,
+                buttonBorder: Border.all(
+                  color: context.customAppColors.danger600,
+                ),
+                buttonRadius: 50.radius,
                 widget: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

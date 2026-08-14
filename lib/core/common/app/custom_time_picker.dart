@@ -245,11 +245,11 @@ class _TimePickerBottomSheetState extends State<_TimePickerBottomSheet> {
                   Expanded(
                     flex: 3,
                     child: AppButton(
-                      text: context.tr('done'),
-                      height: 54.height,
-                      color: primary,
-                      textColor: background,
-                      radius: 12.radius,
+                      title: context.tr('done'),
+                      buttonHeight: 54.radius,
+                      buttonColor: primary,
+                      titleColor: background,
+                      buttonRadius: 12.radius,
                       onPressed: () {
                         Navigator.of(context).pop(_to24Hour());
                       },
@@ -261,12 +261,12 @@ class _TimePickerBottomSheetState extends State<_TimePickerBottomSheet> {
                   Expanded(
                     flex: 2,
                     child: AppButton(
-                      text: context.tr('cancel'),
-                      height: 54.height,
-                      color: Colors.transparent,
-                      textColor: text,
-                      radius: 12.radius,
-                      boxBorder: Border.all(
+                      title: context.tr('cancel'),
+                      buttonHeight: 54.radius,
+                      buttonColor: Colors.transparent,
+                      titleColor: text,
+                      buttonRadius: 12.radius,
+                      buttonBorder: Border.all(
                         color: text.withValues(alpha: 0.15),
                       ),
                       onPressed: () {

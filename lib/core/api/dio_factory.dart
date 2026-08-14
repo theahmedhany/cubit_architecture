@@ -1,8 +1,8 @@
-import 'package:cubit_architecture/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
+import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../cache/secure_storage_helper.dart';
 import '../helpers/app_logger.dart';
 import '../routing/route_manager.dart';

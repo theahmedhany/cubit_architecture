@@ -37,7 +37,7 @@ class DeviceSecurityUtil {
     final dialogContent = _dialogContentForResult(result);
 
     void showDialogIfPossible() {
-      final ctx = navigatorKey.currentContext;
+      final ctx = RouteManager.navigatorKey.currentContext;
 
       if (ctx == null || !ctx.mounted) {
         AppLogger.log(
@@ -55,7 +55,7 @@ class DeviceSecurityUtil {
       );
     }
 
-    if (navigatorKey.currentContext != null) {
+    if (RouteManager.navigatorKey.currentContext != null) {
       showDialogIfPossible();
       return;
     }

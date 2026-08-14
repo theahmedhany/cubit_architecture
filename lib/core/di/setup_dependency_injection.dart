@@ -1,5 +1,6 @@
-import 'package:cubit_architecture/core/di/general_dependency_injection.dart';
 import 'package:get_it/get_it.dart';
+
+import 'general_dependency_injection.dart';
 
 final getIt = GetIt.instance;
 

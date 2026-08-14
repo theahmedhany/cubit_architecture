@@ -28,44 +28,25 @@ class AppDirectionalityWidget extends StatelessWidget {
   }
 }
 
-extension AppDirectionTransform on AppDirection {
-  Matrix4 get transform {
-    switch (this) {
-      /// Horizontal
-      case AppDirection.left:
-        return Matrix4.diagonal3Values(-1.0, 1.0, 1.0);
-
-      case AppDirection.right:
-        return Matrix4.identity();
-
-      case AppDirection.up:
-        return Matrix4.rotationZ(-math.pi / 2);
-
-      case AppDirection.upLeft:
-        return Matrix4.rotationZ(-3 * math.pi / 4);
-
-      case AppDirection.upRight:
-        return Matrix4.rotationZ(-math.pi / 4);
-
-      case AppDirection.down:
-        return Matrix4.rotationZ(math.pi / 2);
-
-      case AppDirection.downLeft:
-        return Matrix4.rotationZ(3 * math.pi / 4);
-
-      case AppDirection.downRight:
-        return Matrix4.rotationZ(math.pi / 4);
-    }
-  }
-}
-
 enum AppDirection {
-  left,
-  right,
-  up,
-  upLeft,
-  upRight,
-  down,
-  downLeft,
-  downRight,
+  right(0),
+  downRight(45),
+  down(90),
+  downLeft(135),
+  left(180),
+  upLeft(225),
+  up(270),
+  upRight(315);
+
+  const AppDirection(this.degrees);
+
+  final int degrees;
+
+  Matrix4 get transform {
+    if (this == left) {
+      return Matrix4.diagonal3Values(-1.0, 1.0, 1.0);
+    }
+
+    return Matrix4.rotationZ(degrees * math.pi / 180);
+  }
 }
