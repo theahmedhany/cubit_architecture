@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../helpers/dimensions_helper.dart';
@@ -41,11 +40,11 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
   static const double _maxScale = 5;
 
   static const _fitIcons = {
-    ImageFitMode.fitWidth: CupertinoIcons.arrow_left_right,
-    ImageFitMode.fitHeight: CupertinoIcons.arrow_up_down,
-    ImageFitMode.contain: CupertinoIcons.fullscreen_exit,
-    ImageFitMode.cover: CupertinoIcons.crop,
-    ImageFitMode.fill: CupertinoIcons.fullscreen,
+    ImageFitMode.fitWidth: Icons.swap_horiz_rounded,
+    ImageFitMode.fitHeight: Icons.swap_vert_rounded,
+    ImageFitMode.contain: Icons.fullscreen_exit_rounded,
+    ImageFitMode.cover: Icons.crop_rounded,
+    ImageFitMode.fill: Icons.fullscreen_rounded,
   };
 
   @override
@@ -91,7 +90,7 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
   }
 
   void _changeFit() {
-    final values = ImageFitMode.values;
+    const values = ImageFitMode.values;
 
     setState(() {
       _fitMode = values[(_fitMode.index + 1) % values.length];
@@ -159,15 +158,47 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
             ),
           ),
 
-          _topBar(),
+          _ImageViewTopBar(
+            overlayAnimation: _overlayController,
+            fitMode: _fitMode,
+            fitIcon: _fitIcons[_fitMode]!,
+            onRotateLeft: _rotateLeft,
+            onRotateRight: _rotateRight,
+            onChangeFit: _changeFit,
+          ),
 
-          _bottomBar(),
+          _ImageViewBottomBar(
+            overlayAnimation: _overlayController,
+            fitMode: _fitMode,
+            fitIcon: _fitIcons[_fitMode]!,
+            currentScale: _currentScale,
+            onResetZoom: _resetZoom,
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _topBar() {
+class _ImageViewTopBar extends StatelessWidget {
+  const _ImageViewTopBar({
+    required this.overlayAnimation,
+    required this.fitMode,
+    required this.fitIcon,
+    required this.onRotateLeft,
+    required this.onRotateRight,
+    required this.onChangeFit,
+  });
+
+  final Animation<double> overlayAnimation;
+  final ImageFitMode fitMode;
+  final IconData fitIcon;
+  final VoidCallback onRotateLeft;
+  final VoidCallback onRotateRight;
+  final VoidCallback onChangeFit;
+
+  @override
+  Widget build(BuildContext context) {
     return Positioned(
       top: 0,
       left: 0,
@@ -175,7 +206,7 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
       child: SafeArea(
         bottom: false,
         child: FadeTransition(
-          opacity: _overlayController,
+          opacity: overlayAnimation,
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: 16.width,
@@ -183,27 +214,27 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
             ),
             child: Row(
               children: [
-                _actionButton(
-                  icon: CupertinoIcons.xmark,
+                const _ImageViewActionButton(
+                  icon: Icons.close_rounded,
                   onTap: RouteManager.pop,
                 ),
 
                 const Spacer(),
 
-                _actionButton(
-                  icon: CupertinoIcons.rotate_left,
-                  onTap: _rotateLeft,
+                _ImageViewActionButton(
+                  icon: Icons.rotate_left_rounded,
+                  onTap: onRotateLeft,
                 ),
 
                 horizontalGap(12),
 
-                _actionButton(icon: _fitIcons[_fitMode]!, onTap: _changeFit),
+                _ImageViewActionButton(icon: fitIcon, onTap: onChangeFit),
 
                 horizontalGap(12),
 
-                _actionButton(
-                  icon: CupertinoIcons.rotate_right,
-                  onTap: _rotateRight,
+                _ImageViewActionButton(
+                  icon: Icons.rotate_right_rounded,
+                  onTap: onRotateRight,
                 ),
               ],
             ),
@@ -212,14 +243,31 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
       ),
     );
   }
+}
 
-  Widget _bottomBar() {
+class _ImageViewBottomBar extends StatelessWidget {
+  const _ImageViewBottomBar({
+    required this.overlayAnimation,
+    required this.fitMode,
+    required this.fitIcon,
+    required this.currentScale,
+    required this.onResetZoom,
+  });
+
+  final Animation<double> overlayAnimation;
+  final ImageFitMode fitMode;
+  final IconData fitIcon;
+  final double currentScale;
+  final VoidCallback onResetZoom;
+
+  @override
+  Widget build(BuildContext context) {
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
       child: FadeTransition(
-        opacity: _overlayController,
+        opacity: overlayAnimation,
         child: SafeArea(
           top: false,
           child: Padding(
@@ -247,20 +295,19 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _infoItem(
-                        icon: _fitIcons[_fitMode]!,
-                        label: _fitMode.label(context),
+                      _ImageViewInfoItem(
+                        icon: fitIcon,
+                        label: fitMode.label(context),
                       ),
 
-                      _infoItem(
-                        icon: CupertinoIcons.zoom_in,
-                        label: '${(_currentScale * 100).toInt()}%',
+                      _ImageViewInfoItem(
+                        icon: Icons.zoom_in_rounded,
+                        label: '${(currentScale * 100).toInt()}%',
                       ),
 
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: _resetZoom,
-                        minimumSize: Size(0, 0),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onResetZoom,
                         child: Text(
                           context.tr('reset'),
                           style: TextStyle(
@@ -280,8 +327,16 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
       ),
     );
   }
+}
 
-  Widget _infoItem({required IconData icon, required String label}) {
+class _ImageViewInfoItem extends StatelessWidget {
+  const _ImageViewInfoItem({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
         Icon(icon, size: 16.radius, color: context.customAppColors.neutral900),
@@ -299,26 +354,36 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
       ],
     );
   }
+}
 
-  Widget _actionButton({required IconData icon, required VoidCallback onTap}) {
+class _ImageViewActionButton extends StatelessWidget {
+  const _ImageViewActionButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return ClipOval(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: context.customAppColors.neutral900.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: context.customAppColors.neutral900.withValues(alpha: 0.12),
-            ),
-          ),
-          child: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: onTap,
-            minimumSize: Size.zero,
-            child: SizedBox(
+        child: Material(
+          color: context.customAppColors.neutral900.withValues(alpha: 0.12),
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: Container(
               width: 46.radius,
               height: 46.radius,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: context.customAppColors.neutral900.withValues(
+                    alpha: 0.12,
+                  ),
+                ),
+              ),
               child: Icon(
                 icon,
                 color: context.customAppColors.neutral900,

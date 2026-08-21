@@ -364,7 +364,7 @@ class _TitleSection extends StatelessWidget {
 
           if (isRequired) ...[
             TextSpan(
-              text: ' *',
+              text: ' * ',
               style: context.f14r.copyWith(color: colors.danger600),
             ),
           ],
