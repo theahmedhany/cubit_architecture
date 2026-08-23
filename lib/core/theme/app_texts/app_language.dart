@@ -25,13 +25,13 @@ class AppLanguage {
   static Locale resolvedLocale() {
     switch (currentLanguageCode) {
       case AppLanguage.arCode:
-        return Locale(AppLanguage.arCode);
+        return const Locale(AppLanguage.arCode);
 
       case AppLanguage.enCode:
-        return Locale(AppLanguage.enCode);
+        return const Locale(AppLanguage.enCode);
 
       default:
-        return Locale(AppLanguage.enCode);
+        return const Locale(AppLanguage.enCode);
     }
   }
 

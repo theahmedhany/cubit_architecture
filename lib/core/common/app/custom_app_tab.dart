@@ -6,6 +6,8 @@ import '../../theme/app_texts/app_text_styles.dart';
 import '../../theme/app_texts/font_weight_helper.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
 
+enum TabStyle { bottomBorder, slidingUnderline, filled }
+
 class CustomAppTab extends StatelessWidget {
   const CustomAppTab({
     super.key,
@@ -106,16 +108,6 @@ class CustomAppTab extends StatelessWidget {
 }
 
 class _SlidingUnderlineTabBar extends StatelessWidget {
-  final List<String> titles;
-  final int selectedIndex;
-  final ValueChanged<int> onTabChanged;
-  final Color? selectedTabColor;
-  final Color? selectedTextColor;
-  final Color? unselectedTabColor;
-  final Color? unselectedTextColor;
-  final Duration animationDuration;
-  final Curve animationCurve;
-
   const _SlidingUnderlineTabBar({
     required this.titles,
     required this.selectedIndex,
@@ -127,6 +119,16 @@ class _SlidingUnderlineTabBar extends StatelessWidget {
     required this.animationDuration,
     required this.animationCurve,
   });
+
+  final List<String> titles;
+  final int selectedIndex;
+  final ValueChanged<int> onTabChanged;
+  final Color? selectedTabColor;
+  final Color? selectedTextColor;
+  final Color? unselectedTabColor;
+  final Color? unselectedTextColor;
+  final Duration animationDuration;
+  final Curve animationCurve;
 
   @override
   Widget build(BuildContext context) {
@@ -210,16 +212,6 @@ class _SlidingUnderlineTabBar extends StatelessWidget {
 }
 
 class _FilledTabBar extends StatelessWidget {
-  final List<String> titles;
-  final int selectedIndex;
-  final ValueChanged<int> onTabChanged;
-  final Color? selectedTabColor;
-  final Color? selectedTextColor;
-  final Color? unselectedTabColor;
-  final Color? unselectedTextColor;
-  final Duration animationDuration;
-  final Curve animationCurve;
-
   const _FilledTabBar({
     required this.titles,
     required this.selectedIndex,
@@ -231,6 +223,16 @@ class _FilledTabBar extends StatelessWidget {
     this.unselectedTabColor,
     this.unselectedTextColor,
   });
+
+  final List<String> titles;
+  final int selectedIndex;
+  final ValueChanged<int> onTabChanged;
+  final Color? selectedTabColor;
+  final Color? selectedTextColor;
+  final Color? unselectedTabColor;
+  final Color? unselectedTextColor;
+  final Duration animationDuration;
+  final Curve animationCurve;
 
   @override
   Widget build(BuildContext context) {
@@ -301,16 +303,6 @@ class _FilledTabBar extends StatelessWidget {
 }
 
 class _BottomBorderTabBar extends StatelessWidget {
-  final List<String> titles;
-  final int selectedIndex;
-  final ValueChanged<int> onTabChanged;
-  final Color? selectedTabColor;
-  final Color? selectedTextColor;
-  final Color? unselectedTabColor;
-  final Color? unselectedTextColor;
-  final Duration animationDuration;
-  final Curve animationCurve;
-
   const _BottomBorderTabBar({
     required this.titles,
     required this.selectedIndex,
@@ -322,6 +314,16 @@ class _BottomBorderTabBar extends StatelessWidget {
     this.unselectedTabColor,
     this.unselectedTextColor,
   });
+
+  final List<String> titles;
+  final int selectedIndex;
+  final ValueChanged<int> onTabChanged;
+  final Color? selectedTabColor;
+  final Color? selectedTextColor;
+  final Color? unselectedTabColor;
+  final Color? unselectedTextColor;
+  final Duration animationDuration;
+  final Curve animationCurve;
 
   @override
   Widget build(BuildContext context) {
@@ -350,18 +352,6 @@ class _BottomBorderTabBar extends StatelessWidget {
 }
 
 class _BottomBorderTabItem extends StatelessWidget {
-  final String title;
-  final int index;
-  final bool isSelected;
-  final bool isCompact;
-  final ValueChanged<int> onTap;
-  final Color? selectedTabColor;
-  final Color? selectedTextColor;
-  final Color? unselectedTabColor;
-  final Color? unselectedTextColor;
-  final Duration animationDuration;
-  final Curve animationCurve;
-
   const _BottomBorderTabItem({
     required this.title,
     required this.index,
@@ -375,6 +365,18 @@ class _BottomBorderTabItem extends StatelessWidget {
     this.unselectedTabColor,
     this.unselectedTextColor,
   });
+
+  final String title;
+  final int index;
+  final bool isSelected;
+  final bool isCompact;
+  final ValueChanged<int> onTap;
+  final Color? selectedTabColor;
+  final Color? selectedTextColor;
+  final Color? unselectedTabColor;
+  final Color? unselectedTextColor;
+  final Duration animationDuration;
+  final Curve animationCurve;
 
   @override
   Widget build(BuildContext context) {
@@ -437,5 +439,3 @@ class _BottomBorderTabItem extends StatelessWidget {
     );
   }
 }
-
-enum TabStyle { bottomBorder, slidingUnderline, filled }

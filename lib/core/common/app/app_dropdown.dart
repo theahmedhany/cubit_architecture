@@ -1,9 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../helpers/asset_helper.dart';
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/spacing.dart';
 import '../../theme/app_texts/app_text_styles.dart';
@@ -12,53 +9,6 @@ import '../../theme/theme_manager/theme_extensions.dart';
 import 'app_loading_indicator.dart';
 
 class AppDropdown<T> extends StatefulWidget {
-  final String? title;
-  final bool withTitle;
-  final bool isRequired;
-
-  final List<T> items;
-  final T? value;
-
-  final String Function(T item) itemLabelBuilder;
-  final Widget Function(T item)? itemBuilder;
-
-  final ValueChanged<T?>? onChanged;
-  final String? Function(T?)? validator;
-
-  final bool enabled;
-  final bool isLoading;
-  final bool isError;
-  final bool autofocus;
-
-  final String hintText;
-
-  final Widget? prefixIcon;
-  final Widget? suffixIcon;
-  final Widget? emptyIcon;
-  final Widget? errorIcon;
-
-  final TextStyle? textStyle;
-  final TextStyle? hintStyle;
-  final TextStyle? titleTextStyle;
-
-  final Color? backgroundColor;
-  final Color? titleColor;
-  final Color? borderColor;
-  final Color? focusedBorderColor;
-  final Color? errorBorderColor;
-  final Color? iconColor;
-  final Color? loaderColor;
-
-  final double? borderRadius;
-  final double? borderWidth;
-  final double? dropdownMaxHeight;
-  final double? dropdownWidth;
-
-  final EdgeInsetsGeometry? contentPadding;
-  final EdgeInsetsGeometry? itemPadding;
-
-  final double? loaderSize;
-
   const AppDropdown({
     super.key,
     this.title,
@@ -75,6 +25,7 @@ class AppDropdown<T> extends StatefulWidget {
     this.isLoading = false,
     this.isError = false,
     this.autofocus = false,
+    this.searchable = false,
     this.prefixIcon,
     this.suffixIcon,
     this.emptyIcon,
@@ -96,7 +47,50 @@ class AppDropdown<T> extends StatefulWidget {
     this.contentPadding,
     this.itemPadding,
     this.loaderSize,
+    this.onLoadMore,
+    this.isLoadingMore = false,
+    this.hasMore = false,
   });
+
+  final String? title;
+  final bool withTitle;
+  final bool isRequired;
+  final List<T> items;
+  final T? value;
+  final String Function(T item) itemLabelBuilder;
+  final Widget Function(T item)? itemBuilder;
+  final ValueChanged<T?>? onChanged;
+  final String? Function(T?)? validator;
+  final bool enabled;
+  final bool isLoading;
+  final bool isError;
+  final bool autofocus;
+  final bool searchable;
+  final String hintText;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
+  final Widget? emptyIcon;
+  final Widget? errorIcon;
+  final TextStyle? textStyle;
+  final TextStyle? hintStyle;
+  final TextStyle? titleTextStyle;
+  final Color? backgroundColor;
+  final Color? titleColor;
+  final Color? borderColor;
+  final Color? focusedBorderColor;
+  final Color? errorBorderColor;
+  final Color? iconColor;
+  final Color? loaderColor;
+  final double? borderRadius;
+  final double? borderWidth;
+  final double? dropdownMaxHeight;
+  final double? dropdownWidth;
+  final EdgeInsetsGeometry? contentPadding;
+  final EdgeInsetsGeometry? itemPadding;
+  final double? loaderSize;
+  final VoidCallback? onLoadMore;
+  final bool isLoadingMore;
+  final bool hasMore;
 
   bool get _isEmpty => items.isEmpty;
 
@@ -112,13 +106,16 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
   final GlobalKey _fieldKey = GlobalKey();
 
   OverlayEntry? _overlayEntry;
+  List<T> _filteredItems = [];
   bool _isOpen = false;
   bool _showAbove = false;
   double? _dropdownWidth;
 
   static final double _itemHeight = 48.radius;
+  static final double _listPadding = 16.radius;
   static final double _dropdownGap = 4.radius;
   static final double _screenMargin = 16.radius;
+  static const double _paginationThreshold = 300;
 
   T? get _safeValue =>
       (!widget.isError &&
@@ -130,8 +127,16 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
   @override
   void initState() {
     super.initState();
+
+    _filteredItems = widget.items;
     _syncText();
+
+    if (widget.searchable) {
+      _controller.addListener(_onSearchChanged);
+    }
+
     _focusNode.addListener(_handleFocusChange);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -141,14 +146,44 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
         oldWidget.items != widget.items ||
         oldWidget.isError != widget.isError) {
       _syncText();
-      _overlayEntry?.markNeedsBuild();
+      if (widget.searchable) {
+        _filteredItems = _controller.text.trim().isEmpty
+            ? widget.items
+            : widget.items.where((item) {
+                return widget
+                    .itemLabelBuilder(item)
+                    .toLowerCase()
+                    .contains(_controller.text.toLowerCase());
+              }).toList();
+      } else {
+        _filteredItems = widget.items;
+      }
+      _scheduleOverlayRebuild();
     }
+
+    if (widget.isLoadingMore != oldWidget.isLoadingMore) {
+      _scheduleOverlayRebuild();
+    }
+  }
+
+  void _scheduleOverlayRebuild() {
+    if (_overlayEntry == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _overlayEntry?.markNeedsBuild();
+      }
+    });
   }
 
   @override
   void dispose() {
     _closeDropdown();
+    if (widget.searchable) {
+      _controller.removeListener(_onSearchChanged);
+    }
     _focusNode.removeListener(_handleFocusChange);
+    _scrollController.removeListener(_onScroll);
     _controller.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
@@ -156,6 +191,8 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
   }
 
   void _syncText() {
+    if (_isOpen) return;
+
     final value = _safeValue;
     final newText = value != null ? widget.itemLabelBuilder(value) : '';
 
@@ -176,6 +213,46 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
       }
     } else {
       _closeDropdown();
+    }
+  }
+
+  void _onSearchChanged() {
+    if (!_isOpen) return;
+
+    _applyFilter(_controller.text);
+  }
+
+  void _applyFilter(String query) {
+    if (widget._isEmpty || widget.isError) {
+      _filteredItems = [];
+      _overlayEntry?.markNeedsBuild();
+      return;
+    }
+
+    _filteredItems = query.trim().isEmpty
+        ? widget.items
+        : widget.items.where((item) {
+            return widget
+                .itemLabelBuilder(item)
+                .toLowerCase()
+                .contains(query.toLowerCase());
+          }).toList();
+
+    _overlayEntry?.markNeedsBuild();
+    if (mounted) setState(() {});
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (widget.onLoadMore == null) return;
+    if (widget.isLoadingMore || !widget.hasMore) return;
+
+    final remaining =
+        _scrollController.position.maxScrollExtent -
+        _scrollController.position.pixels;
+
+    if (remaining <= _paginationThreshold) {
+      widget.onLoadMore!();
     }
   }
 
@@ -211,6 +288,25 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     if (_isOpen) return;
 
     _showAbove = _computeShowAbove();
+
+    if (widget.searchable) {
+      final value = _safeValue;
+
+      if (value != null) {
+        final label = widget.itemLabelBuilder(value);
+        _controller.text = label;
+        _controller.selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: label.length,
+        );
+      } else {
+        _controller.clear();
+      }
+      _applyFilter('');
+    } else {
+      _filteredItems = widget.items;
+    }
+
     _overlayEntry = _buildOverlayEntry();
     Overlay.of(context).insert(_overlayEntry!);
     setState(() => _isOpen = true);
@@ -231,13 +327,36 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     _closeDropdown();
   }
 
+  double _computeDropdownHeight() {
+    final maxH = widget.dropdownMaxHeight ?? 200.radius;
+
+    if (_filteredItems.isEmpty && !widget.isLoadingMore) {
+      return 72.radius;
+    }
+
+    final itemCount = _filteredItems.length + (widget.isLoadingMore ? 1 : 0);
+    final naturalH = itemCount * _itemHeight + _listPadding * 2;
+    return naturalH.clamp(60, maxH);
+  }
+
   OverlayEntry _buildOverlayEntry() {
     final colors = context.customAppColors;
 
     return OverlayEntry(
       builder: (_) {
+        final displayItems = widget.searchable ? _filteredItems : widget.items;
         final maxH = widget.dropdownMaxHeight ?? 200.radius;
-        final showScrollbar = widget.items.length * _itemHeight > maxH;
+
+        final double dropdownH;
+        if (widget.searchable) {
+          dropdownH = _computeDropdownHeight();
+        } else {
+          dropdownH = maxH;
+        }
+
+        final totalItemCount =
+            displayItems.length + (widget.isLoadingMore ? 1 : 0);
+        final showScrollbar = totalItemCount * _itemHeight > dropdownH;
 
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
@@ -248,6 +367,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           child: Stack(
             children: [
               const SizedBox.expand(),
+
               CompositedTransformFollower(
                 link: _layerLink,
                 showWhenUnlinked: false,
@@ -262,7 +382,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                   color: Colors.transparent,
                   child: _DropdownContainer(
                     width: widget.dropdownWidth ?? _dropdownWidth ?? 300,
-                    maxHeight: maxH,
+                    maxHeight: dropdownH,
                     fillColor: widget.backgroundColor ?? colors.neutral50,
                     radius: BorderRadius.circular(
                       widget.borderRadius ?? 12.radius,
@@ -272,7 +392,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                         : (widget.borderColor ?? colors.neutral300),
                     borderWidth: widget.borderWidth ?? 1.3,
                     child: _DropdownList<T>(
-                      items: widget.items,
+                      items: displayItems,
                       selectedValue: widget.value,
                       scrollController: _scrollController,
                       showScrollbar: showScrollbar,
@@ -285,6 +405,8 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                       selectedColor: colors.primary600,
                       neutralColor: colors.neutral600,
                       scrollbarColor: colors.neutral300,
+                      isLoadingMore: widget.isLoadingMore,
+                      isSearchable: widget.searchable,
                     ),
                   ),
                 ),
@@ -342,6 +464,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                 titleColor: widget.titleColor,
                 titleTextStyle: widget.titleTextStyle,
               ),
+
               verticalGap(6),
             ],
 
@@ -349,57 +472,57 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
               link: _layerLink,
               child: SizedBox(
                 key: _fieldKey,
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  enabled: isFieldEnabled,
-                  readOnly: true,
-                  autofocus: widget.autofocus,
-                  style: widget.textStyle ?? context.f14r,
-                  cursorColor: focusedColor,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: fillColor,
-                    isDense: true,
-                    contentPadding: defaultContentPadding,
-                    hintText: widget.isError
-                        ? context.tr('there_is_something_went_wrong')
-                        : widget._isEmpty
-                        ? context.tr('no_data_available')
-                        : widget.hintText,
-                    hintStyle: defaultHintStyle,
-                    prefixIcon: widget.prefixIcon,
-                    prefixIconConstraints: BoxConstraints.tightFor(
-                      width: widget.prefixIcon != null ? 38.radius : 0,
-                      height: 38.radius,
-                    ),
-                    suffixIcon: _buildSuffixIcon(),
-                    suffixIconConstraints: BoxConstraints.tightFor(
-                      width: 44.radius,
-                      height: 44.radius,
-                    ),
-                    border: _border(radius, enabledBorderColor, borderW),
-                    enabledBorder: _border(
-                      radius,
-                      hasError ? dangerColor : enabledBorderColor,
-                      borderW,
-                    ),
-                    focusedBorder: _border(
-                      radius,
-                      hasError ? dangerColor : focusedColor,
-                      borderW,
-                    ),
-                    errorBorder: _border(radius, dangerColor, borderW),
-                    focusedErrorBorder: _border(radius, dangerColor, borderW),
-                    disabledBorder: _border(radius, colors.neutral200, borderW),
-                    errorStyle: context.f12r.copyWith(color: dangerColor),
-                  ),
-                ),
+                child: widget.searchable
+                    ? TextFormField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        enabled: isFieldEnabled,
+                        readOnly: !isFieldEnabled,
+                        autofocus: widget.autofocus,
+                        style: widget.textStyle ?? context.f14r,
+                        cursorColor: focusedColor,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        decoration: _inputDecoration(
+                          fillColor: fillColor,
+                          defaultContentPadding: defaultContentPadding,
+                          defaultHintStyle: defaultHintStyle,
+                          radius: radius,
+                          borderW: borderW,
+                          enabledBorderColor: enabledBorderColor,
+                          focusedColor: focusedColor,
+                          dangerColor: dangerColor,
+                          hasError: hasError,
+                          colors: colors,
+                        ),
+                      )
+                    : TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        enabled: isFieldEnabled,
+                        readOnly: true,
+                        autofocus: widget.autofocus,
+                        style: widget.textStyle ?? context.f14r,
+                        cursorColor: focusedColor,
+                        decoration: _inputDecoration(
+                          fillColor: fillColor,
+                          defaultContentPadding: defaultContentPadding,
+                          defaultHintStyle: defaultHintStyle,
+                          radius: radius,
+                          borderW: borderW,
+                          enabledBorderColor: enabledBorderColor,
+                          focusedColor: focusedColor,
+                          dangerColor: dangerColor,
+                          hasError: hasError,
+                          colors: colors,
+                        ),
+                      ),
               ),
             ),
 
             if (field.hasError) ...[
               verticalGap(4),
+
               Padding(
                 padding: EdgeInsetsDirectional.only(start: 12.radius),
                 child: Text(
@@ -411,6 +534,57 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           ],
         );
       },
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required Color fillColor,
+    required EdgeInsetsGeometry defaultContentPadding,
+    required TextStyle defaultHintStyle,
+    required BorderRadius radius,
+    required double borderW,
+    required Color enabledBorderColor,
+    required Color focusedColor,
+    required Color dangerColor,
+    required bool hasError,
+    required dynamic colors,
+  }) {
+    return InputDecoration(
+      filled: true,
+      fillColor: fillColor,
+      isDense: true,
+      contentPadding: defaultContentPadding,
+      hintText: widget.isError
+          ? context.tr('there_is_something_went_wrong')
+          : widget._isEmpty
+          ? context.tr('no_data_available')
+          : widget.hintText,
+      hintStyle: defaultHintStyle,
+      prefixIcon: widget.prefixIcon,
+      prefixIconConstraints: BoxConstraints.tightFor(
+        width: widget.prefixIcon != null ? 38.radius : 0,
+        height: 38.radius,
+      ),
+      suffixIcon: _buildSuffixIcon(),
+      suffixIconConstraints: BoxConstraints.tightFor(
+        width: 44.radius,
+        height: 44.radius,
+      ),
+      border: _border(radius, enabledBorderColor, borderW),
+      enabledBorder: _border(
+        radius,
+        hasError ? dangerColor : enabledBorderColor,
+        borderW,
+      ),
+      focusedBorder: _border(
+        radius,
+        hasError ? dangerColor : focusedColor,
+        borderW,
+      ),
+      errorBorder: _border(radius, dangerColor, borderW),
+      focusedErrorBorder: _border(radius, dangerColor, borderW),
+      disabledBorder: _border(radius, colors.neutral200, borderW),
+      errorStyle: context.f12r.copyWith(color: dangerColor),
     );
   }
 
@@ -430,14 +604,10 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           Padding(
             padding: EdgeInsetsDirectional.only(end: 12.radius),
             child: Center(
-              child: SvgPicture.asset(
-                AssetHelper.iconSVGPath('error_case'),
-                width: 20.radius,
-                height: 20.radius,
-                colorFilter: ColorFilter.mode(
-                  context.customAppColors.danger600,
-                  BlendMode.srcIn,
-                ),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                size: 20.radius,
+                color: context.customAppColors.danger600,
               ),
             ),
           );
@@ -448,14 +618,10 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           Padding(
             padding: EdgeInsetsDirectional.only(end: 12.radius),
             child: Center(
-              child: SvgPicture.asset(
-                AssetHelper.iconSVGPath('info_case'),
-                width: 20.radius,
-                height: 20.radius,
-                colorFilter: ColorFilter.mode(
-                  context.customAppColors.neutral400,
-                  BlendMode.srcIn,
-                ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 20.radius,
+                color: context.customAppColors.neutral400,
               ),
             ),
           );
@@ -469,14 +635,10 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             child: Center(
-              child: SvgPicture.asset(
-                AssetHelper.iconSVGPath('arrow_down'),
-                width: 20.radius,
-                height: 20.radius,
-                colorFilter: ColorFilter.mode(
-                  widget.iconColor ?? context.customAppColors.neutral500,
-                  BlendMode.srcIn,
-                ),
+              child: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 24.radius,
+                color: widget.iconColor ?? context.customAppColors.neutral400,
               ),
             ),
           ),
@@ -492,17 +654,9 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
 }
 
 class _DropdownContainer extends StatelessWidget {
-  final double width;
-  final double? maxHeight;
-  final Color fillColor;
-  final BorderRadius radius;
-  final Color borderColor;
-  final double borderWidth;
-  final Widget child;
-
   const _DropdownContainer({
     required this.width,
-    this.maxHeight,
+    required this.maxHeight,
     required this.fillColor,
     required this.radius,
     required this.borderColor,
@@ -510,13 +664,19 @@ class _DropdownContainer extends StatelessWidget {
     required this.child,
   });
 
+  final double width;
+  final double maxHeight;
+  final Color fillColor;
+  final BorderRadius radius;
+  final Color borderColor;
+  final double borderWidth;
+  final Widget child;
+
   @override
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      constraints: maxHeight != null
-          ? BoxConstraints(maxHeight: maxHeight!)
-          : null,
+      constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: fillColor,
         borderRadius: radius,
@@ -526,12 +686,12 @@ class _DropdownContainer extends StatelessWidget {
             blurRadius: 32.radius,
             spreadRadius: -4.radius,
             offset: const Offset(0, 8),
-            color: Colors.black.withValues(alpha: 0.06),
+            color: context.customAppColors.neutral900.withValues(alpha: 0.06),
           ),
           BoxShadow(
             blurRadius: 12.radius,
             offset: const Offset(0, 4),
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.customAppColors.neutral900.withValues(alpha: 0.05),
           ),
         ],
       ),
@@ -541,20 +701,6 @@ class _DropdownContainer extends StatelessWidget {
 }
 
 class _DropdownList<T> extends StatelessWidget {
-  final List<T> items;
-  final T? selectedValue;
-  final ScrollController scrollController;
-  final bool showScrollbar;
-  final String Function(T) itemLabelBuilder;
-  final Widget Function(T)? itemBuilder;
-  final EdgeInsetsGeometry? itemPadding;
-  final TextStyle? textStyle;
-  final ValueChanged<T> onSelect;
-  final Color dividerColor;
-  final Color selectedColor;
-  final Color neutralColor;
-  final Color scrollbarColor;
-
   const _DropdownList({
     required this.items,
     required this.selectedValue,
@@ -569,16 +715,50 @@ class _DropdownList<T> extends StatelessWidget {
     required this.selectedColor,
     required this.neutralColor,
     required this.scrollbarColor,
+    required this.isLoadingMore,
+    required this.isSearchable,
   });
+
+  final List<T> items;
+  final T? selectedValue;
+  final ScrollController scrollController;
+  final bool showScrollbar;
+  final String Function(T) itemLabelBuilder;
+  final Widget Function(T)? itemBuilder;
+  final EdgeInsetsGeometry? itemPadding;
+  final TextStyle? textStyle;
+  final ValueChanged<T> onSelect;
+  final Color dividerColor;
+  final Color selectedColor;
+  final Color neutralColor;
+  final Color scrollbarColor;
+  final bool isLoadingMore;
+  final bool isSearchable;
 
   @override
   Widget build(BuildContext context) {
+    if (items.isEmpty && !isLoadingMore && isSearchable) {
+      return SizedBox(
+        height: 56.radius,
+        child: Center(
+          child: Text(
+            context.tr('no_results_found'),
+            style: context.f14r.copyWith(
+              color: context.customAppColors.neutral400,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final totalItemCount = items.length + (isLoadingMore ? 1 : 0);
+
     final list = ListView.separated(
       controller: scrollController,
       physics: const BouncingScrollPhysics(),
       shrinkWrap: true,
       padding: EdgeInsets.symmetric(vertical: 8.radius),
-      itemCount: items.length,
+      itemCount: totalItemCount,
       separatorBuilder: (_, _) => Divider(
         height: 1.radius,
         thickness: 1.radius,
@@ -587,6 +767,15 @@ class _DropdownList<T> extends StatelessWidget {
         color: dividerColor,
       ),
       itemBuilder: (context, index) {
+        if (index == items.length) {
+          return SizedBox(
+            height: 48.radius,
+            child: Center(
+              child: AppLoadingIndicator(size: 22.radius, color: selectedColor),
+            ),
+          );
+        }
+
         final item = items[index];
         final isSelected = item == selectedValue;
 
@@ -627,16 +816,6 @@ class _DropdownList<T> extends StatelessWidget {
 }
 
 class _DropdownItemTile<T> extends StatefulWidget {
-  final T item;
-  final bool isSelected;
-  final String label;
-  final Widget? customChild;
-  final TextStyle? textStyle;
-  final EdgeInsetsGeometry? itemPadding;
-  final Color selectedColor;
-  final Color neutralColor;
-  final VoidCallback onTap;
-
   const _DropdownItemTile({
     required this.item,
     required this.isSelected,
@@ -648,6 +827,16 @@ class _DropdownItemTile<T> extends StatefulWidget {
     this.textStyle,
     this.itemPadding,
   });
+
+  final T item;
+  final bool isSelected;
+  final String label;
+  final Widget? customChild;
+  final TextStyle? textStyle;
+  final EdgeInsetsGeometry? itemPadding;
+  final Color selectedColor;
+  final Color neutralColor;
+  final VoidCallback onTap;
 
   @override
   State<_DropdownItemTile<T>> createState() => _DropdownItemTileState<T>();
@@ -661,10 +850,8 @@ class _DropdownItemTileState<T> extends State<_DropdownItemTile<T>> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: CupertinoButton(
-        onPressed: widget.onTap,
-        padding: EdgeInsets.zero,
-        minimumSize: Size.zero,
+      child: InkWell(
+        onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOut,
@@ -693,14 +880,6 @@ class _DropdownItemTileState<T> extends State<_DropdownItemTile<T>> {
 }
 
 class _DropdownMenuItemContent<T> extends StatelessWidget {
-  final T item;
-  final String label;
-  final Widget? customChild;
-  final TextStyle? textStyle;
-  final Color selectedColor;
-  final Color neutralColor;
-  final bool isSelected;
-
   const _DropdownMenuItemContent({
     required this.item,
     required this.label,
@@ -710,6 +889,14 @@ class _DropdownMenuItemContent<T> extends StatelessWidget {
     this.textStyle,
     required this.isSelected,
   });
+
+  final T item;
+  final String label;
+  final Widget? customChild;
+  final TextStyle? textStyle;
+  final Color selectedColor;
+  final Color neutralColor;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -744,17 +931,17 @@ class _DropdownMenuItemContent<T> extends StatelessWidget {
 }
 
 class _DropdownTitle extends StatelessWidget {
-  final String title;
-  final bool isRequired;
-  final Color? titleColor;
-  final TextStyle? titleTextStyle;
-
   const _DropdownTitle({
     required this.title,
     required this.isRequired,
     this.titleColor,
     this.titleTextStyle,
   });
+
+  final String title;
+  final bool isRequired;
+  final Color? titleColor;
+  final TextStyle? titleTextStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -771,7 +958,7 @@ class _DropdownTitle extends StatelessWidget {
           ),
           if (isRequired)
             TextSpan(
-              text: ' *',
+              text: ' * ',
               style: context.f14r.copyWith(
                 color: context.customAppColors.danger600,
               ),

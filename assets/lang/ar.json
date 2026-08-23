@@ -107,5 +107,25 @@
   "developer_mode_detected_message": "يبدو أن وضع المطور مفعل. لأسباب أمنية، لا يُسمح باستخدام هذا الوضع للوصول إلى هذا التطبيق. يرجى تعطيل وضع المطور لتسجيل الدخول.",
   "update_required_title": "تحديث مطلوب",
   "update_required_message": "نسخة جديدة من التطبيق متاحة. يرجى التحديث إلى أحدث نسخة لمواصلة استخدام التطبيق.",
-  "update_now": "تحديث الآن"
+  "update_now": "تحديث الآن",
+  "select_date": "اختيار التاريخ",
+  "today": "اليوم",
+  "pick_date": "اختر التاريخ",
+  "pick_time": "اختر الوقت",
+  "days_of_week": {
+    "saturday": "السبت",
+    "saturday_short": "سبت",
+    "sunday": "الأحد",
+    "sunday_short": "أحد",
+    "monday": "الإثنين",
+    "monday_short": "اثن",
+    "tuesday": "الثلاثاء",
+    "tuesday_short": "ثلا",
+    "wednesday": "الأربعاء",
+    "wednesday_short": "ارب",
+    "thursday": "الخميس",
+    "thursday_short": "خمي",
+    "friday": "الجمعة",
+    "friday_short": "جمع"
+  }
 }

@@ -35,6 +35,10 @@ class MediaHelper {
     return _media(context).viewInsets;
   }
 
+  // Returns Bottom system UI insets.
+  static double bottomViewInsets(BuildContext context) =>
+      _media(context).viewInsets.bottom;
+
   // Returns top safe area padding.
   static double topPadding(BuildContext context) {
     return viewPadding(context).top;

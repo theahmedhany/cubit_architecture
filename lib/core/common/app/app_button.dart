@@ -135,13 +135,13 @@ class AppButton extends StatelessWidget {
               return Container(
                 margin: buttonMargin,
                 decoration: BoxDecoration(
+                  color: effectiveBackground,
                   borderRadius: radius,
                   border: buttonBorder,
                 ),
-                clipBehavior: buttonBorder != null ? Clip.antiAlias : Clip.none,
+                clipBehavior: Clip.antiAlias,
                 child: Material(
-                  color: effectiveBackground,
-                  borderRadius: radius,
+                  color: Colors.transparent,
                   child: InkWell(
                     onTap: handleTap,
                     onLongPress: handleLongPress,
@@ -248,6 +248,7 @@ class _BouncingButton extends StatefulWidget {
     VoidCallback handleTapCancel,
   )
   builder;
+
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final VoidCallback? onPressWhenDisabled;

@@ -99,11 +99,6 @@ Future<void> _checkIfLoggedInUser() async {
     key: AppCacheKeys.userAccessToken,
   );
 
-  AppLogger.log(
-    'User token retrieved: $userToken',
-    name: 'CHECK_IF_LOGGED_IN_USER',
-  );
-
   if (userToken.isNotEmpty) {
     AppConstants.authStatus = AuthStatus.loggedIn;
 

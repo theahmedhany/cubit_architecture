@@ -1,12 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter/services.dart';
 
-import '../../helpers/asset_helper.dart';
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/spacing.dart';
 import '../../theme/app_texts/app_text_styles.dart';
@@ -19,6 +17,9 @@ class AppSlideButton extends StatefulWidget {
     required this.text,
     this.doneText,
     this.isLoading = false,
+    this.enabled = true,
+    this.autoReset = true,
+    this.doneDisplayDuration = const Duration(seconds: 5),
     this.shouldCompleteSlide,
     this.onSlideCompleted,
     this.height,
@@ -29,13 +30,22 @@ class AppSlideButton extends StatefulWidget {
     this.trackColorEnd,
     this.sliderColor,
     this.textColor,
-    this.sliderIcon = 'arrow_right',
+    this.disabledTrackColor,
+    this.sliderIcon,
     this.sliderIconColor,
-  });
+    this.enableHapticFeedback = true,
+    this.completionThreshold = 0.78,
+  }) : assert(
+         completionThreshold > 0 && completionThreshold <= 1.0,
+         'completionThreshold must be between 0 (exclusive) and 1 (inclusive)',
+       );
 
   final String text;
   final String? doneText;
   final bool isLoading;
+  final bool enabled;
+  final bool autoReset;
+  final Duration doneDisplayDuration;
   final bool Function()? shouldCompleteSlide;
   final Future<void> Function()? onSlideCompleted;
   final double? height;
@@ -46,20 +56,30 @@ class AppSlideButton extends StatefulWidget {
   final Color? trackColorEnd;
   final Color? sliderColor;
   final Color? textColor;
-  final String sliderIcon;
+  final Color? disabledTrackColor;
+  final Widget? sliderIcon;
   final Color? sliderIconColor;
+  final bool enableHapticFeedback;
+  final double completionThreshold;
 
   @override
-  State<AppSlideButton> createState() => _AppSlideButtonState();
+  State<AppSlideButton> createState() => AppSlideButtonState();
 }
 
 enum _SlideStatus { idle, dragging, loading, completed }
 
-class _AppSlideButtonState extends State<AppSlideButton>
+class AppSlideButtonState extends State<AppSlideButton>
     with TickerProviderStateMixin {
   double _progress = 0;
 
   _SlideStatus _status = _SlideStatus.idle;
+
+  Timer? _autoResetTimer;
+
+  late final AnimationController _snapCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 350),
+  );
 
   late final AnimationController _rippleCtrl = AnimationController(
     vsync: this,
@@ -81,15 +101,46 @@ class _AppSlideButtonState extends State<AppSlideButton>
 
   bool get _isLoading => _status == _SlideStatus.loading || widget.isLoading;
 
+  bool get _isInteractive =>
+      widget.enabled && !_isLoading && _status != _SlideStatus.completed;
+
+  @override
+  void didUpdateWidget(covariant AppSlideButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.isLoading && !oldWidget.isLoading) {
+      _shimmerCtrl.stop();
+    } else if (!widget.isLoading && oldWidget.isLoading) {
+      if (_status == _SlideStatus.idle) _shimmerCtrl.repeat();
+    }
+  }
+
   @override
   void dispose() {
+    _autoResetTimer?.cancel();
+    _snapCtrl.dispose();
     _rippleCtrl.dispose();
     _shimmerCtrl.dispose();
     super.dispose();
   }
 
+  void reset() {
+    _autoResetTimer?.cancel();
+
+    if (!mounted) return;
+
+    _animateProgressTo(
+      0,
+      onDone: () {
+        if (!mounted) return;
+        setState(() => _status = _SlideStatus.idle);
+        _shimmerCtrl.repeat();
+      },
+    );
+  }
+
   void _onDragUpdate(double dx, double maxDrag, bool isRtl) {
-    if (_isLoading || _status == _SlideStatus.completed) return;
+    if (!_isInteractive) return;
 
     setState(() {
       _status = _SlideStatus.dragging;
@@ -103,15 +154,30 @@ class _AppSlideButtonState extends State<AppSlideButton>
     _shimmerCtrl.stop();
   }
 
-  Future<void> _onDragEnd() async {
-    if (_isLoading || _status == _SlideStatus.completed) return;
+  Future<void> _onDragEnd(DragEndDetails details, double maxDrag) async {
+    if (!_isInteractive) return;
 
-    final shouldTrigger = _progress > 0.78;
+    final velocity = details.primaryVelocity ?? 0;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final effectiveVelocity = isRtl ? -velocity : velocity;
+
+    final shouldTrigger =
+        _progress > widget.completionThreshold ||
+        (effectiveVelocity > 800 && _progress > 0.40);
 
     if (!shouldTrigger) {
-      _resetThumb();
+      _animateProgressTo(
+        0,
+        onDone: () {
+          if (!mounted) return;
+          setState(() => _status = _SlideStatus.idle);
+          _shimmerCtrl.repeat();
+        },
+      );
       return;
     }
+
+    _animateProgressTo(1.0);
 
     setState(() => _status = _SlideStatus.loading);
 
@@ -121,39 +187,82 @@ class _AppSlideButtonState extends State<AppSlideButton>
 
     final shouldComplete = widget.shouldCompleteSlide?.call() ?? true;
 
-    setState(() => _status = _SlideStatus.idle);
-
     if (shouldComplete) {
       _complete();
     } else {
-      _resetThumb();
+      _animateProgressTo(
+        0,
+        onDone: () {
+          if (!mounted) return;
+          setState(() => _status = _SlideStatus.idle);
+          _shimmerCtrl.repeat();
+        },
+      );
     }
   }
 
   void _complete() {
     if (!mounted) return;
 
+    if (widget.enableHapticFeedback) {
+      HapticFeedback.mediumImpact();
+    }
+
     setState(() => _status = _SlideStatus.completed);
     _rippleCtrl.forward(from: 0);
+
+    _autoResetTimer?.cancel();
+    if (widget.autoReset) {
+      _autoResetTimer = Timer(widget.doneDisplayDuration, () {
+        if (mounted && _status == _SlideStatus.completed) {
+          reset();
+        }
+      });
+    }
   }
 
-  void _resetThumb() {
-    setState(() {
-      _progress = 0;
-      _status = _SlideStatus.idle;
-    });
+  void _animateProgressTo(double target, {VoidCallback? onDone}) {
+    final start = _progress;
 
-    _shimmerCtrl.repeat();
+    _snapCtrl
+      ..reset()
+      ..duration = Duration(
+        milliseconds: ((start - target).abs() * 350).toInt().clamp(120, 350),
+      );
+
+    late final Animation<double> tween;
+    tween = Tween<double>(
+      begin: start,
+      end: target,
+    ).animate(CurvedAnimation(parent: _snapCtrl, curve: Curves.easeOutCubic));
+
+    void listener() {
+      if (!mounted) return;
+      setState(() => _progress = tween.value);
+    }
+
+    void statusListener(AnimationStatus status) {
+      if (status == AnimationStatus.completed) {
+        _snapCtrl.removeListener(listener);
+        _snapCtrl.removeStatusListener(statusListener);
+        onDone?.call();
+      }
+    }
+
+    _snapCtrl.addListener(listener);
+    _snapCtrl.addStatusListener(statusListener);
+    _snapCtrl.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isRtl = Directionality.of(context) == TextDirection.RTL;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
 
-    final double buttonHeight = widget.height ?? 48.height;
+    final double buttonHeight = widget.height ?? 56.height;
     final double buttonWidth = widget.width ?? double.infinity;
+    final double cornerRadius = widget.radius ?? 50.radius;
 
-    final double sliderSize = (buttonHeight - 14.radius);
+    final double sliderSize = buttonHeight - 14.radius;
     final double edgePadding = sliderSize + 12.radius;
 
     final Color trackStart =
@@ -175,83 +284,165 @@ class _AppSlideButtonState extends State<AppSlideButton>
 
         final double maxDrag = maxWidth - sliderSize - 14.radius;
 
-        final double xOffset = isRtl
-            ? (1 - _progress) * maxDrag
-            : _progress * maxDrag;
+        final double xOffset = _progress * maxDrag;
 
-        return CupertinoButton(
-          onPressed: _status == _SlideStatus.completed ? _resetThumb : null,
-          padding: EdgeInsets.zero,
-          child: SizedBox(
-            height: buttonHeight,
-            width: maxWidth,
-            child: AnimatedBuilder(
-              animation: Listenable.merge([_rippleCtrl, _shimmerCtrl]),
-              builder: (context, _) {
-                return CustomPaint(
-                  painter: _TrackPainter(
-                    context: context,
-                    progress: _progress,
-                    trackStart: trackStart,
-                    trackEnd: trackEnd,
-                    radius: widget.radius ?? 50.radius,
-                    rippleProgress: _ripple.value,
-                    shimmerProgress: _shimmer.value,
-                    sliderCenter: Offset(
-                      xOffset + 6.radius + sliderSize / 2,
-                      buttonHeight / 2,
+        return Opacity(
+          opacity: widget.enabled ? 1.0 : 0.45,
+          child: IgnorePointer(
+            ignoring: !widget.enabled,
+            child: SizedBox(
+              height: buttonHeight,
+              width: maxWidth,
+              child: AnimatedBuilder(
+                animation: Listenable.merge([_rippleCtrl, _shimmerCtrl]),
+                builder: (context, _) {
+                  return CustomPaint(
+                    painter: _TrackPainter(
+                      context: context,
+                      progress: _progress,
+                      trackStart: widget.enabled
+                          ? trackStart
+                          : (widget.disabledTrackColor ??
+                                context.customAppColors.neutral300),
+                      trackEnd: widget.enabled
+                          ? trackEnd
+                          : (widget.disabledTrackColor ??
+                                context.customAppColors.neutral400),
+                      radius: cornerRadius,
+                      rippleProgress: _ripple.value,
+                      shimmerProgress: _shimmer.value,
+                      sliderCenter: Offset(
+                        isRtl
+                            ? (maxWidth - (xOffset + 6.radius + sliderSize / 2))
+                            : (xOffset + 6.radius + sliderSize / 2),
+                        buttonHeight / 2,
+                      ),
+                      isCompleted: _status == _SlideStatus.completed,
+                      showShimmer:
+                          _status != _SlideStatus.completed &&
+                          _status != _SlideStatus.dragging,
+                      isRtl: isRtl,
                     ),
-                    isCompleted: _status == _SlideStatus.completed,
-                    showShimmer:
-                        _status != _SlideStatus.completed &&
-                        _status != _SlideStatus.dragging,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      widget.radius ?? 50.radius,
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        _SlideLabel(
-                          text: widget.text,
-                          textStyle: widget.textStyle,
-                          textColor: widget.textColor,
-                          edgePadding: edgePadding,
-                          isCompleted: _status == _SlideStatus.completed,
-                          progress: _progress,
-                        ),
-
-                        if (_status == _SlideStatus.completed)
-                          _DoneOverlay(
-                            doneText: widget.doneText ?? context.tr('done'),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(cornerRadius),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          _SlideLabel(
+                            text: widget.text,
                             textStyle: widget.textStyle,
+                            textColor: widget.textColor,
+                            edgePadding: edgePadding,
+                            isCompleted: _status == _SlideStatus.completed,
+                            progress: _progress,
                           ),
 
-                        if (_status != _SlideStatus.completed)
-                          Positioned(
-                            left: isRtl ? null : xOffset + 6.radius,
-                            right: isRtl ? xOffset + 6.radius : null,
-                            top: (buttonHeight - sliderSize) / 2,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onHorizontalDragUpdate: (d) =>
-                                  _onDragUpdate(d.delta.dx, maxDrag, isRtl),
-                              onHorizontalDragEnd: (_) => _onDragEnd(),
-                              child: _SlideThumb(
-                                sliderSize: sliderSize,
-                                sliderBg: sliderBg,
-                                iconColor: iconColor,
-                                sliderIcon: widget.sliderIcon,
-                                isLoading: _isLoading,
+                          if (_status == _SlideStatus.completed) ...[
+                            Positioned.fill(
+                              child: Builder(
+                                builder: (context) {
+                                  final rippleColor =
+                                      context.customAppColors.neutral0;
+                                  return Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        if (widget.enableHapticFeedback) {
+                                          HapticFeedback.selectionClick();
+                                        }
+                                        reset();
+                                      },
+                                      borderRadius: BorderRadius.circular(
+                                        cornerRadius,
+                                      ),
+                                      splashFactory: InkRipple.splashFactory,
+                                      splashColor: rippleColor.withValues(
+                                        alpha: 0.30,
+                                      ),
+                                      highlightColor: rippleColor.withValues(
+                                        alpha: 0.28,
+                                      ),
+                                      hoverColor: rippleColor.withValues(
+                                        alpha: 0.10,
+                                      ),
+                                      focusColor: rippleColor.withValues(
+                                        alpha: 0.16,
+                                      ),
+                                      overlayColor:
+                                          WidgetStateProperty.resolveWith((
+                                            states,
+                                          ) {
+                                            if (states.contains(
+                                              WidgetState.pressed,
+                                            )) {
+                                              return rippleColor.withValues(
+                                                alpha: 0.34,
+                                              );
+                                            }
+                                            if (states.contains(
+                                              WidgetState.hovered,
+                                            )) {
+                                              return rippleColor.withValues(
+                                                alpha: 0.10,
+                                              );
+                                            }
+                                            if (states.contains(
+                                              WidgetState.focused,
+                                            )) {
+                                              return rippleColor.withValues(
+                                                alpha: 0.16,
+                                              );
+                                            }
+                                            return null;
+                                          }),
+                                      mouseCursor: SystemMouseCursors.click,
+                                      child: _DoneOverlay(
+                                        doneText:
+                                            widget.doneText ??
+                                            context.tr('done'),
+                                        textStyle: widget.textStyle,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          ),
-                      ],
+                          ],
+
+                          if (_status != _SlideStatus.completed) ...[
+                            Positioned(
+                              left: isRtl ? null : xOffset + 6.radius,
+                              right: isRtl ? xOffset + 6.radius : null,
+                              top: (buttonHeight - sliderSize) / 2,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onHorizontalDragUpdate: (d) =>
+                                    _onDragUpdate(d.delta.dx, maxDrag, isRtl),
+                                onHorizontalDragEnd: (d) =>
+                                    _onDragEnd(d, maxDrag),
+                                child: _SlideThumb(
+                                  sliderSize: sliderSize,
+                                  sliderBg: sliderBg,
+                                  iconColor: iconColor,
+                                  sliderIcon:
+                                      widget.sliderIcon ??
+                                      Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        color: iconColor,
+                                        size: 18.radius,
+                                      ),
+                                  isLoading: _isLoading,
+                                  progress: _progress,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         );
@@ -316,7 +507,10 @@ class _DoneOverlay extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(doneText, style: context.f14m.copyWith(color: color)),
+          Text(
+            doneText,
+            style: textStyle ?? context.f14m.copyWith(color: color),
+          ),
 
           horizontalGap(8),
 
@@ -342,48 +536,53 @@ class _SlideThumb extends StatelessWidget {
     required this.iconColor,
     required this.sliderIcon,
     required this.isLoading,
+    required this.progress,
   });
 
   final double sliderSize;
   final Color sliderBg;
   final Color iconColor;
-  final String sliderIcon;
+  final Widget sliderIcon;
   final bool isLoading;
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: sliderSize,
       width: sliderSize,
-      decoration: BoxDecoration(color: sliderBg, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: sliderBg,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Center(
-        child: isLoading
-            ? AppLoadingIndicator(color: iconColor, size: sliderSize / 1.5)
-            : Center(
-                child: SvgPicture.asset(
-                  AssetHelper.iconSVGPath(sliderIcon),
-                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                  width: 22.radius,
-                  height: 22.radius,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: isLoading
+              ? AppLoadingIndicator(
+                  key: const ValueKey('loading'),
+                  color: iconColor,
+                  size: sliderSize / 1.5,
+                )
+              : Transform.rotate(
+                  key: const ValueKey('icon'),
+                  angle: progress * 0.15,
+                  child: sliderIcon,
                 ),
-              ),
+        ),
       ),
     );
   }
 }
 
 class _TrackPainter extends CustomPainter {
-  final BuildContext context;
-  final double progress;
-  final Color trackStart;
-  final Color trackEnd;
-  final double radius;
-  final double rippleProgress;
-  final double shimmerProgress;
-  final Offset sliderCenter;
-  final bool isCompleted;
-  final bool showShimmer;
-
   _TrackPainter({
     required this.context,
     required this.progress,
@@ -395,7 +594,20 @@ class _TrackPainter extends CustomPainter {
     required this.sliderCenter,
     required this.isCompleted,
     required this.showShimmer,
+    required this.isRtl,
   });
+
+  final BuildContext context;
+  final double progress;
+  final Color trackStart;
+  final Color trackEnd;
+  final double radius;
+  final double rippleProgress;
+  final double shimmerProgress;
+  final Offset sliderCenter;
+  final bool isCompleted;
+  final bool showShimmer;
+  final bool isRtl;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -412,28 +624,39 @@ class _TrackPainter extends CustomPainter {
       Paint()
         ..shader = LinearGradient(
           colors: [trackStart, trackEnd],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          begin: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+          end: isRtl ? Alignment.centerLeft : Alignment.centerRight,
         ).createShader(Offset.zero & size),
     );
 
     if (progress > 0 && !isCompleted) {
+      final fillRect = isRtl
+          ? Rect.fromLTWH(
+              size.width * (1 - progress),
+              0,
+              size.width * progress,
+              size.height,
+            )
+          : Rect.fromLTWH(0, 0, size.width * progress, size.height);
+
       canvas.drawRect(
-        Rect.fromLTWH(0, 0, size.width * progress, size.height),
+        fillRect,
         Paint()
           ..shader = LinearGradient(
             colors: [
               Color.lerp(trackStart, context.customAppColors.neutral0, 0.22)!,
               Color.lerp(trackEnd, context.customAppColors.neutral0, 0.10)!,
             ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+            begin: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+            end: isRtl ? Alignment.centerLeft : Alignment.centerRight,
           ).createShader(Offset.zero & size),
       );
     }
 
     if (showShimmer) {
-      final double cx = shimmerProgress * size.width;
+      final double cx = isRtl
+          ? (1 - shimmerProgress) * size.width
+          : shimmerProgress * size.width;
       final double bandHalf = size.width * 0.20;
       canvas.drawRect(
         Offset.zero & size,
@@ -480,5 +703,6 @@ class _TrackPainter extends CustomPainter {
       old.rippleProgress != rippleProgress ||
       old.shimmerProgress != shimmerProgress ||
       old.showShimmer != showShimmer ||
-      old.isCompleted != isCompleted;
+      old.isCompleted != isCompleted ||
+      old.isRtl != isRtl;
 }

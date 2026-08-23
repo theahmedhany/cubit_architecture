@@ -67,7 +67,7 @@ void main() async {
     EasyLocalization(
       supportedLocales: AppLanguage.supportedLanguages,
       path: AppLanguage.langPath,
-      startLocale: const Locale(AppLanguage.startLocale),
+      startLocale: const Locale(AppLanguage.arCode),
       fallbackLocale: const Locale(AppLanguage.fallbackLocale),
       saveLocale: true,
       child: const MyApp(),
