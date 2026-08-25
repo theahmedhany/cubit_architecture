@@ -1,8 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../helpers/dimensions_helper.dart';
 import '../theme_manager/theme_extensions.dart';
 import 'app_fonts.dart';
+import 'app_language.dart';
 import 'font_weight_helper.dart';
 
 class AppTextStyle {
@@ -10,9 +12,14 @@ class AppTextStyle {
 
   // Test Base Style
   static TextStyle _base(BuildContext context) {
+    final isArabic = context.locale.languageCode == AppLanguage.arCode;
+
     return TextStyle(
       fontFamily: AppFonts.getFontFamily(context),
-      letterSpacing: 0.5,
+      fontFamilyFallback: AppFonts.fallbackFonts,
+      letterSpacing: isArabic ? 0.0 : 0.5,
+      height: isArabic ? 1.35 : null,
+      leadingDistribution: TextLeadingDistribution.even,
       color: context.customAppColors.neutral950,
     );
   }

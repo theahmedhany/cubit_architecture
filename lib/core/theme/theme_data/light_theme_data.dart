@@ -12,6 +12,7 @@ ThemeData lightThemeData(BuildContext context) {
     scaffoldBackgroundColor: colors.neutral0,
     brightness: Brightness.light,
     fontFamily: fontFamily,
+    fontFamilyFallback: AppFonts.fallbackFonts,
     extensions: <ThemeExtension<dynamic>>[colors],
 
     colorScheme: ColorScheme.fromSeed(
@@ -23,6 +24,7 @@ ThemeData lightThemeData(BuildContext context) {
       bodyColor: colors.neutral900,
       displayColor: colors.neutral900,
       fontFamily: fontFamily,
+      fontFamilyFallback: AppFonts.fallbackFonts,
     ),
   );
 }

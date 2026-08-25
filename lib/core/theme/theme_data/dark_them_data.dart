@@ -12,6 +12,7 @@ ThemeData darkThemeData(BuildContext context) {
     scaffoldBackgroundColor: colors.neutral950,
     brightness: Brightness.dark,
     fontFamily: fontFamily,
+    fontFamilyFallback: AppFonts.fallbackFonts,
     extensions: <ThemeExtension<dynamic>>[colors],
 
     colorScheme: ColorScheme.fromSeed(
@@ -23,6 +24,7 @@ ThemeData darkThemeData(BuildContext context) {
       bodyColor: colors.neutral0,
       displayColor: colors.neutral0,
       fontFamily: fontFamily,
+      fontFamilyFallback: AppFonts.fallbackFonts,
     ),
   );
 }
