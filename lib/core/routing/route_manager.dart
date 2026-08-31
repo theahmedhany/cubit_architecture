@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../helpers/app_logger.dart';
@@ -92,7 +91,16 @@ class RouteManager {
   static Route<dynamic> _buildPageRoute(Widget page, RouteAnimation animation) {
     switch (animation) {
       case RouteAnimation.slideFromRight:
-        return CupertinoPageRoute(builder: (_) => page);
+        return PageRouteBuilder(
+          pageBuilder: (_, a, _) => page,
+          transitionsBuilder: (_, a, _, child) => SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: a, curve: Curves.easeInOut)),
+            child: child,
+          ),
+        );
 
       case RouteAnimation.fade:
         return PageRouteBuilder(

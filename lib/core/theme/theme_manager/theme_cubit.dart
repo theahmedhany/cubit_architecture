@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../cache/shared_pref_helper.dart';
+import '../../localization/locale_keys.g.dart';
 
 class ThemeCubit extends Cubit<ThemeMode> {
   static const String themeKey = 'app_theme_mode';
@@ -66,13 +67,13 @@ class ThemeCubit extends Cubit<ThemeMode> {
   String get currentThemeName {
     switch (state) {
       case ThemeMode.light:
-        return 'light_theme'.tr();
+        return LocaleKeys.themes_light_theme.tr();
 
       case ThemeMode.dark:
-        return 'dark_theme'.tr();
+        return LocaleKeys.themes_dark_theme.tr();
 
       case ThemeMode.system:
-        return 'system_theme'.tr();
+        return LocaleKeys.themes_system_theme.tr();
     }
   }
 
