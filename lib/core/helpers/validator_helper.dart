@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 
+import '../localization/locale_keys.g.dart';
 import 'app_regex.dart';
 
 class ValidatorHelper {
@@ -13,7 +14,7 @@ class ValidatorHelper {
 
   // Required Field Validation
   static String? required(String? value) =>
-      _required(value, 'this_field_is_required');
+      _required(value, LocaleKeys.validation_this_field_is_required);
 
   // Length Validation
   static String? validateLength(String? value, {int? min, int? max}) {
@@ -23,13 +24,13 @@ class ValidatorHelper {
     final length = value!.trim().length;
 
     if (min != null && length < min) {
-      return 'must_be_at_least_characters'.tr(
+      return LocaleKeys.validation_must_be_at_least_characters.tr(
         namedArgs: {'min': min.toString()},
       );
     }
 
     if (max != null && length > max) {
-      return 'must_be_at_most_characters'.tr(
+      return LocaleKeys.validation_must_be_at_most_characters.tr(
         namedArgs: {'max': max.toString()},
       );
     }
@@ -39,11 +40,11 @@ class ValidatorHelper {
 
   // Email Validation
   static String? validateEmail(String? value) {
-    final req = _required(value, 'email_is_required');
+    final req = _required(value, LocaleKeys.validation_email_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isEmailValid(value!.trim())) {
-      return 'invalid_email_address'.tr();
+      return LocaleKeys.validation_invalid_email_address.tr();
     }
 
     return null;
@@ -51,25 +52,28 @@ class ValidatorHelper {
 
   // Password Validation
   static String? validatePassword(String? value) {
-    final req = _required(value, 'password_is_required');
+    final req = _required(value, LocaleKeys.validation_password_is_required);
     if (req != null) return req;
 
     final v = value!.trim();
 
     if (!AppRegex.hasLowerCase(v)) {
-      return "password_must_contain_a_lowercase_letter".tr();
+      return LocaleKeys.validation_password_must_contain_a_lowercase_letter
+          .tr();
     }
     if (!AppRegex.hasUpperCase(v)) {
-      return 'password_must_contain_an_uppercase_letter'.tr();
+      return LocaleKeys.validation_password_must_contain_an_uppercase_letter
+          .tr();
     }
     if (!AppRegex.hasNumber(v)) {
-      return 'password_must_contain_a_number'.tr();
+      return LocaleKeys.validation_password_must_contain_a_number.tr();
     }
     if (!AppRegex.hasSpecialCharacter(v)) {
-      return 'password_must_contain_a_special_character'.tr();
+      return LocaleKeys.validation_password_must_contain_a_special_character
+          .tr();
     }
     if (!AppRegex.hasMinLength(v)) {
-      return 'password_must_be_at_least_8_characters'.tr();
+      return LocaleKeys.validation_password_must_be_at_least_8_characters.tr();
     }
 
     return null;
@@ -77,11 +81,14 @@ class ValidatorHelper {
 
   // Password Confirmation Validation
   static String? validatePasswordConfirm(String? value, String? password) {
-    final req = _required(value, 'confirm_password_is_required');
+    final req = _required(
+      value,
+      LocaleKeys.validation_confirm_password_is_required,
+    );
     if (req != null) return req;
 
     if (value != password) {
-      return 'password_does_not_match'.tr();
+      return LocaleKeys.validation_password_does_not_match.tr();
     }
 
     return null;
@@ -89,12 +96,15 @@ class ValidatorHelper {
 
   // General Phone Validation
   static String? validateGeneralPhone(String? value) {
-    final req = _required(value, 'phone_number_is_required');
+    final req = _required(
+      value,
+      LocaleKeys.validation_phone_number_is_required,
+    );
     if (req != null) return req;
 
     final v = value!.trim();
     if (v.length < 4 || v.length > 15) {
-      return 'invalid_phone_number'.tr();
+      return LocaleKeys.validation_invalid_phone_number.tr();
     }
 
     return null;
@@ -102,11 +112,14 @@ class ValidatorHelper {
 
   // Egypt Phone Validation
   static String? validateEGPhone(String? value) {
-    final req = _required(value, 'phone_number_is_required');
+    final req = _required(
+      value,
+      LocaleKeys.validation_phone_number_is_required,
+    );
     if (req != null) return req;
 
     if (!AppRegex.isEGPhoneValid(value!.trim())) {
-      return 'invalid_phone_number'.tr();
+      return LocaleKeys.validation_invalid_phone_number.tr();
     }
 
     return null;
@@ -114,11 +127,14 @@ class ValidatorHelper {
 
   // Saudi Arabia Phone Validation
   static String? validateSAPhone(String? value) {
-    final req = _required(value, 'phone_number_is_required');
+    final req = _required(
+      value,
+      LocaleKeys.validation_phone_number_is_required,
+    );
     if (req != null) return req;
 
     if (!AppRegex.isSAPhoneValid(value!.trim())) {
-      return 'invalid_phone_number'.tr();
+      return LocaleKeys.validation_invalid_phone_number.tr();
     }
 
     return null;
@@ -126,11 +142,14 @@ class ValidatorHelper {
 
   // UAE Phone Validation
   static String? validateUAEPhone(String? value) {
-    final req = _required(value, 'phone_number_is_required');
+    final req = _required(
+      value,
+      LocaleKeys.validation_phone_number_is_required,
+    );
     if (req != null) return req;
 
     if (!AppRegex.isUAEPhoneValid(value!.trim())) {
-      return 'invalid_phone_number'.tr();
+      return LocaleKeys.validation_invalid_phone_number.tr();
     }
 
     return null;
@@ -138,7 +157,10 @@ class ValidatorHelper {
 
   // Email or Phone Validation
   static String? validateEmailOrPhone(String? value) {
-    final req = _required(value, 'invalid_email_or_phone_number');
+    final req = _required(
+      value,
+      LocaleKeys.validation_invalid_email_or_phone_number,
+    );
     if (req != null) return req;
 
     final input = value!.trim();
@@ -150,7 +172,7 @@ class ValidatorHelper {
         AppRegex.isUAEPhoneValid(input);
 
     if (!isValid) {
-      return 'invalid_email_or_phone_number'.tr();
+      return LocaleKeys.validation_invalid_email_or_phone_number.tr();
     }
 
     return null;
@@ -158,11 +180,11 @@ class ValidatorHelper {
 
   // Username Validation
   static String? validateUsername(String? value) {
-    final req = _required(value, 'username_is_required');
+    final req = _required(value, LocaleKeys.validation_username_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isUsernameValid(value!.trim())) {
-      return 'invalid_username'.tr();
+      return LocaleKeys.validation_invalid_username.tr();
     }
 
     return null;
@@ -170,11 +192,11 @@ class ValidatorHelper {
 
   // URL Validation
   static String? validateUrl(String? value) {
-    final req = _required(value, 'url_is_required');
+    final req = _required(value, LocaleKeys.validation_url_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isUrlValid(value!.trim())) {
-      return 'invalid_url'.tr();
+      return LocaleKeys.validation_invalid_url.tr();
     }
 
     return null;
@@ -182,11 +204,11 @@ class ValidatorHelper {
 
   // Numeric Validation (int or decimal, supports dot/comma)
   static String? validateNumeric(String? value) {
-    final req = _required(value, 'this_field_is_required');
+    final req = _required(value, LocaleKeys.validation_this_field_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isNumeric(value!.trim())) {
-      return 'must_be_numeric'.tr();
+      return LocaleKeys.validation_must_be_numeric.tr();
     }
 
     return null;
@@ -194,11 +216,11 @@ class ValidatorHelper {
 
   // Integer Validation (int only)
   static String? validateInteger(String? value) {
-    final req = _required(value, 'this_field_is_required');
+    final req = _required(value, LocaleKeys.validation_this_field_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isInteger(value!.trim())) {
-      return 'must_be_integer'.tr();
+      return LocaleKeys.validation_must_be_integer.tr();
     }
 
     return null;
@@ -206,11 +228,11 @@ class ValidatorHelper {
 
   // Decimal Validation (dot only)
   static String? validateDecimal(String? value) {
-    final req = _required(value, 'this_field_is_required');
+    final req = _required(value, LocaleKeys.validation_this_field_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isDecimal(value!.trim())) {
-      return 'must_be_decimal_number'.tr();
+      return LocaleKeys.validation_must_be_decimal_number.tr();
     }
 
     return null;
@@ -218,11 +240,11 @@ class ValidatorHelper {
 
   // Alphabet Validation
   static String? validateAlphabet(String? value) {
-    final req = _required(value, 'this_field_is_required');
+    final req = _required(value, LocaleKeys.validation_this_field_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isAlphabetOnly(value!.trim())) {
-      return 'must_contain_alphabets_only'.tr();
+      return LocaleKeys.validation_must_contain_alphabets_only.tr();
     }
 
     return null;
@@ -230,11 +252,11 @@ class ValidatorHelper {
 
   // Arabic Text Validation
   static String? validateArabicText(String? value) {
-    final req = _required(value, 'this_field_is_required');
+    final req = _required(value, LocaleKeys.validation_this_field_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isArabicText(value!.trim())) {
-      return 'must_be_arabic_text'.tr();
+      return LocaleKeys.validation_must_be_arabic_text.tr();
     }
 
     return null;
@@ -242,11 +264,11 @@ class ValidatorHelper {
 
   // English Text Validation
   static String? validateEnglishText(String? value) {
-    final req = _required(value, 'this_field_is_required');
+    final req = _required(value, LocaleKeys.validation_this_field_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isEnglishText(value!.trim())) {
-      return 'must_be_english_text'.tr();
+      return LocaleKeys.validation_must_be_english_text.tr();
     }
 
     return null;
@@ -254,11 +276,11 @@ class ValidatorHelper {
 
   // Hex Color Validation
   static String? validateHexColor(String? value) {
-    final req = _required(value, 'this_field_is_required');
+    final req = _required(value, LocaleKeys.validation_this_field_is_required);
     if (req != null) return req;
 
     if (!AppRegex.isHexColor(value!.trim())) {
-      return 'invalid_hex_color'.tr();
+      return LocaleKeys.validation_invalid_hex_color.tr();
     }
 
     return null;
