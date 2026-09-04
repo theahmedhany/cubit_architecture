@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/media_helper.dart';
 import '../../helpers/spacing.dart';
+import '../../localization/locale_keys.g.dart';
 import '../../routing/route_manager.dart';
 import '../../theme/app_texts/font_weight_helper.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
@@ -75,7 +76,9 @@ class NotFoundScreen extends StatelessWidget {
                       horizontalGap(8),
 
                       Text(
-                        context.tr('route_not_found').toUpperCase(),
+                        context
+                            .tr(LocaleKeys.not_found_screen_route_not_found)
+                            .toUpperCase(),
                         style: TextStyle(
                           fontSize: 10.font,
                           fontWeight: FontWeightHelper.semiBold,
@@ -123,7 +126,9 @@ class NotFoundScreen extends StatelessWidget {
                   verticalGap(20),
 
                   Text(
-                    context.tr('route_not_found_message'),
+                    context.tr(
+                      LocaleKeys.not_found_screen_route_not_found_message,
+                    ),
                     style: TextStyle(
                       fontSize: 26.font,
                       fontWeight: FontWeightHelper.bold,
@@ -136,7 +141,9 @@ class NotFoundScreen extends StatelessWidget {
                   verticalGap(12),
 
                   Text(
-                    context.tr('page_moved_or_not_exist'),
+                    context.tr(
+                      LocaleKeys.not_found_screen_page_moved_or_not_exist,
+                    ),
                     style: TextStyle(
                       fontSize: 12.font,
                       height: 1.65,
@@ -160,7 +167,7 @@ class NotFoundScreen extends StatelessWidget {
                       horizontalGap(6),
 
                       Text(
-                        context.tr('route_unmatched'),
+                        context.tr(LocaleKeys.not_found_screen_route_unmatched),
                         style: TextStyle(fontSize: 12.font, color: infoColor),
                       ),
 
@@ -179,7 +186,9 @@ class NotFoundScreen extends StatelessWidget {
                   verticalGap(12),
 
                   AppButton(
-                    title: mainButtonText ?? context.tr('go_to_login'),
+                    title:
+                        mainButtonText ??
+                        context.tr(LocaleKeys.not_found_screen_go_to_login),
                     onPressed: onMainButtonPressed ?? notFountInitialNavigation,
                     buttonColor: dangerColor,
                     titleColor: backgroundColor,
@@ -189,7 +198,7 @@ class NotFoundScreen extends StatelessWidget {
                   verticalGap(10),
 
                   AppButton(
-                    title: context.tr('go_back'),
+                    title: context.tr(LocaleKeys.not_found_screen_go_back),
                     onPressed: () {
                       RouteManager.pop();
                     },

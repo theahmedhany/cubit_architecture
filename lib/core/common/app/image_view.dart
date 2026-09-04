@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/spacing.dart';
+import '../../localization/locale_keys.g.dart';
 import '../../routing/route_manager.dart';
+import '../../theme/app_texts/app_text_styles.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
 import 'app_network_image.dart';
 
@@ -97,35 +99,41 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
     });
   }
 
-  void _resetZoom() {
+  void _resetEverything() {
     _transformationController.value = Matrix4.identity();
 
     setState(() {
-      _currentScale = 1;
+      _currentScale = 1.0;
+      _quarterTurns = 0;
+      _fitMode = ImageFitMode.contain;
     });
   }
 
   void _handleDoubleTap() {
     if (_currentScale > 1) {
-      _resetZoom();
+      _transformationController.value = Matrix4.identity();
+      setState(() {
+        _currentScale = 1.0;
+      });
       return;
     }
 
     final matrix = Matrix4.identity();
-
     matrix.scaleByDouble(2.0, 2.0, 1.0, 1.0);
-
     _transformationController.value = matrix;
 
     setState(() {
-      _currentScale = 2;
+      _currentScale = 2.0;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.customAppColors;
+    final screenSize = MediaQuery.sizeOf(context);
+
     return Scaffold(
-      backgroundColor: context.customAppColors.neutral50,
+      backgroundColor: colors.neutral50,
       body: Stack(
         children: [
           Positioned.fill(
@@ -142,15 +150,87 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
                     _currentScale = details.scale;
                   });
                 },
-                child: Center(
-                  child: RotatedBox(
-                    quarterTurns: _quarterTurns,
-                    child: Hero(
-                      tag: widget.imageUrl,
-                      child: AppNetworkImage(
-                        url: widget.imageUrl,
-                        fit: _fitMode.fit,
+                child: SizedBox(
+                  width: screenSize.width,
+                  height: screenSize.height,
+                  child: Center(
+                    child: RotatedBox(
+                      quarterTurns: _quarterTurns,
+                      child: SizedBox(
+                        width: (_quarterTurns % 2 == 0)
+                            ? screenSize.width
+                            : screenSize.height,
+                        height: (_quarterTurns % 2 == 0)
+                            ? screenSize.height
+                            : screenSize.width,
+                        child: Hero(
+                          tag: widget.imageUrl,
+                          child: AppNetworkImage(
+                            url: widget.imageUrl,
+                            fit: _fitMode.fit,
+                            width: double.infinity,
+                            height: double.infinity,
+                            enablePreview: false,
+                            backgroundColor: colors.neutral0.withValues(
+                              alpha: 0.0,
+                            ),
+                          ),
+                        ),
                       ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Top Gradient Scrim for guaranteed contrast
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 120.height,
+            child: FadeTransition(
+              opacity: _overlayController,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colors.neutral950.withValues(alpha: 0.55),
+                        colors.neutral950.withValues(alpha: 0.25),
+                        colors.neutral950.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Bottom Gradient Scrim for guaranteed contrast
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 130.height,
+            child: FadeTransition(
+              opacity: _overlayController,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        colors.neutral950.withValues(alpha: 0.55),
+                        colors.neutral950.withValues(alpha: 0.25),
+                        colors.neutral950.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
                     ),
                   ),
                 ),
@@ -172,7 +252,7 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
             fitMode: _fitMode,
             fitIcon: _fitIcons[_fitMode]!,
             currentScale: _currentScale,
-            onResetZoom: _resetZoom,
+            onReset: _resetEverything,
           ),
         ],
       ),
@@ -199,6 +279,8 @@ class _ImageViewTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.customAppColors;
+
     return Positioned(
       top: 0,
       left: 0,
@@ -221,24 +303,139 @@ class _ImageViewTopBar extends StatelessWidget {
 
                 const Spacer(),
 
-                _ImageViewActionButton(
-                  icon: Icons.rotate_left_rounded,
-                  onTap: onRotateLeft,
-                ),
+                // Grouped Toolbar Capsule for Actions
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(50.radius),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      padding: EdgeInsets.all(4.radius),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colors.neutral950.withValues(alpha: 0.65),
+                            colors.neutral900.withValues(alpha: 0.45),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(50.radius),
+                        border: Border.all(
+                          color: colors.neutral0.withValues(alpha: 0.22),
+                          width: 1.width,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors.neutral950.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ImageViewToolbarButton(
+                            icon: Icons.rotate_left_rounded,
+                            onTap: onRotateLeft,
+                          ),
 
-                horizontalGap(12),
+                          Container(
+                            width: 1,
+                            height: 20.height,
+                            margin: EdgeInsets.symmetric(horizontal: 2.width),
+                            color: colors.neutral0.withValues(alpha: 0.15),
+                          ),
 
-                _ImageViewActionButton(icon: fitIcon, onTap: onChangeFit),
+                          _ImageViewToolbarButton(
+                            icon: fitIcon,
+                            onTap: onChangeFit,
+                            isAnimated: true,
+                          ),
 
-                horizontalGap(12),
+                          Container(
+                            width: 1,
+                            height: 20.height,
+                            margin: EdgeInsets.symmetric(horizontal: 2.width),
+                            color: colors.neutral0.withValues(alpha: 0.15),
+                          ),
 
-                _ImageViewActionButton(
-                  icon: Icons.rotate_right_rounded,
-                  onTap: onRotateRight,
+                          _ImageViewToolbarButton(
+                            icon: Icons.rotate_right_rounded,
+                            onTap: onRotateRight,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageViewToolbarButton extends StatelessWidget {
+  const _ImageViewToolbarButton({
+    required this.icon,
+    required this.onTap,
+    this.isAnimated = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isAnimated;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.customAppColors;
+
+    return Material(
+      color: colors.neutral0.withValues(alpha: 0.0),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        splashColor: colors.neutral0.withValues(alpha: 0.25),
+        highlightColor: colors.neutral0.withValues(alpha: 0.1),
+        child: Container(
+          width: 38.radius,
+          height: 38.radius,
+          alignment: Alignment.center,
+          child: isAnimated
+              ? AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, anim) =>
+                      ScaleTransition(scale: anim, child: child),
+                  child: Icon(
+                    icon,
+                    key: ValueKey<IconData>(icon),
+                    color: colors.neutral0,
+                    size: 20.radius,
+                    shadows: [
+                      Shadow(
+                        color: colors.neutral950.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                )
+              : Icon(
+                  icon,
+                  color: colors.neutral0,
+                  size: 20.radius,
+                  shadows: [
+                    Shadow(
+                      color: colors.neutral950.withValues(alpha: 0.5),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -251,17 +448,19 @@ class _ImageViewBottomBar extends StatelessWidget {
     required this.fitMode,
     required this.fitIcon,
     required this.currentScale,
-    required this.onResetZoom,
+    required this.onReset,
   });
 
   final Animation<double> overlayAnimation;
   final ImageFitMode fitMode;
   final IconData fitIcon;
   final double currentScale;
-  final VoidCallback onResetZoom;
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.customAppColors;
+
     return Positioned(
       bottom: 0,
       left: 0,
@@ -271,49 +470,138 @@ class _ImageViewBottomBar extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: EdgeInsets.all(20.radius),
+            padding: EdgeInsets.symmetric(
+              horizontal: 16.width,
+              vertical: 16.height,
+            ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24.radius),
+              borderRadius: BorderRadius.circular(30.radius),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: 20.width,
-                    vertical: 14.height,
+                    horizontal: 16.width,
+                    vertical: 10.height,
                   ),
                   decoration: BoxDecoration(
-                    color: context.customAppColors.neutral900.withValues(
-                      alpha: 0.08,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colors.neutral950.withValues(alpha: 0.70),
+                        colors.neutral900.withValues(alpha: 0.50),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(24.radius),
+                    borderRadius: BorderRadius.circular(30.radius),
                     border: Border.all(
-                      color: context.customAppColors.neutral900.withValues(
-                        alpha: 0.12,
-                      ),
+                      color: colors.neutral0.withValues(alpha: 0.22),
+                      width: 1.width,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colors.neutral950.withValues(alpha: 0.35),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                      BoxShadow(
+                        color: colors.neutral950.withValues(alpha: 0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      // Fit Mode info
                       _ImageViewInfoItem(
                         icon: fitIcon,
                         label: fitMode.label(context),
                       ),
 
+                      Container(
+                        width: 1,
+                        height: 20.height,
+                        color: colors.neutral0.withValues(alpha: 0.18),
+                      ),
+
+                      // Scale Percentage info
                       _ImageViewInfoItem(
                         icon: Icons.zoom_in_rounded,
                         label: '${(currentScale * 100).toInt()}%',
                       ),
 
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: onResetZoom,
-                        child: Text(
-                          context.tr('reset'),
-                          style: TextStyle(
-                            color: context.customAppColors.neutral900,
-                            fontSize: 13.font,
-                            fontWeight: FontWeight.w600,
+                      Container(
+                        width: 1,
+                        height: 20.height,
+                        color: colors.neutral0.withValues(alpha: 0.18),
+                      ),
+
+                      // Interactive Reset Button
+                      Material(
+                        color: colors.neutral0.withValues(alpha: 0.0),
+                        child: InkWell(
+                          onTap: onReset,
+                          borderRadius: BorderRadius.circular(16.radius),
+                          splashColor: colors.neutral0.withValues(alpha: 0.25),
+                          highlightColor: colors.neutral0.withValues(
+                            alpha: 0.12,
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.width,
+                              vertical: 6.height,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  colors.neutral0.withValues(alpha: 0.26),
+                                  colors.neutral0.withValues(alpha: 0.14),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16.radius),
+                              border: Border.all(
+                                color: colors.neutral0.withValues(alpha: 0.35),
+                                width: 1.width,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colors.neutral950.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.restart_alt_rounded,
+                                  size: 14.radius,
+                                  color: colors.neutral0,
+                                ),
+                                horizontalGap(5),
+                                Text(
+                                  LocaleKeys.image_view_reset.tr(),
+                                  style: context.f12sb.copyWith(
+                                    color: colors.neutral0,
+                                    shadows: [
+                                      Shadow(
+                                        color: colors.neutral950.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -337,18 +625,50 @@ class _ImageViewInfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.customAppColors;
+
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16.radius, color: context.customAppColors.neutral900),
+        Container(
+          width: 26.radius,
+          height: 26.radius,
+          decoration: BoxDecoration(
+            color: colors.neutral0.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: colors.neutral0.withValues(alpha: 0.15),
+              width: 1.width,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 14.radius,
+            color: colors.neutral0,
+            shadows: [
+              Shadow(
+                color: colors.neutral950.withValues(alpha: 0.5),
+                blurRadius: 3,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+        ),
 
         horizontalGap(8),
 
         Text(
           label,
-          style: TextStyle(
-            color: context.customAppColors.neutral900,
-            fontSize: 13.font,
-            fontWeight: FontWeight.w600,
+          style: context.f12m.copyWith(
+            color: colors.neutral0,
+            shadows: [
+              Shadow(
+                color: colors.neutral950.withValues(alpha: 0.5),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
         ),
       ],
@@ -364,30 +684,55 @@ class _ImageViewActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.customAppColors;
+
     return ClipOval(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Material(
-          color: context.customAppColors.neutral900.withValues(alpha: 0.12),
+          color: colors.neutral0.withValues(alpha: 0.0),
           shape: const CircleBorder(),
           child: InkWell(
             onTap: onTap,
+            splashColor: colors.neutral0.withValues(alpha: 0.25),
+            highlightColor: colors.neutral0.withValues(alpha: 0.12),
             customBorder: const CircleBorder(),
             child: Container(
-              width: 46.radius,
-              height: 46.radius,
+              width: 44.radius,
+              height: 44.radius,
               decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colors.neutral950.withValues(alpha: 0.65),
+                    colors.neutral900.withValues(alpha: 0.45),
+                  ],
+                ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: context.customAppColors.neutral900.withValues(
-                    alpha: 0.12,
-                  ),
+                  color: colors.neutral0.withValues(alpha: 0.25),
+                  width: 1.width,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.neutral950.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Icon(
                 icon,
-                color: context.customAppColors.neutral900,
-                size: 22.radius,
+                color: colors.neutral0,
+                size: 20.radius,
+                shadows: [
+                  Shadow(
+                    color: colors.neutral950.withValues(alpha: 0.5),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
             ),
           ),
@@ -422,19 +767,19 @@ extension ImageFitModeX on ImageFitMode {
   String label(BuildContext context) {
     switch (this) {
       case ImageFitMode.fitWidth:
-        return context.tr('fit_width');
+        return LocaleKeys.image_view_fit_width.tr();
 
       case ImageFitMode.fitHeight:
-        return context.tr('fit_height');
+        return LocaleKeys.image_view_fit_height.tr();
 
       case ImageFitMode.contain:
-        return context.tr('contain');
+        return LocaleKeys.image_view_contain.tr();
 
       case ImageFitMode.cover:
-        return context.tr('cover');
+        return LocaleKeys.image_view_cover.tr();
 
       case ImageFitMode.fill:
-        return context.tr('fill');
+        return LocaleKeys.image_view_fill.tr();
     }
   }
 }
