@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../helpers/date_formatter_helper.dart';
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/spacing.dart';
+import '../../localization/locale_keys.g.dart';
 import '../../theme/app_texts/app_language.dart';
 import '../../theme/app_texts/app_text_styles.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
@@ -210,24 +211,24 @@ class _CustomCalendarViewState extends State<CustomCalendarView> {
 
     if (isArabic) {
       return [
-        context.tr('days_of_week.saturday_short'),
-        context.tr('days_of_week.sunday_short'),
-        context.tr('days_of_week.monday_short'),
-        context.tr('days_of_week.tuesday_short'),
-        context.tr('days_of_week.wednesday_short'),
-        context.tr('days_of_week.thursday_short'),
-        context.tr('days_of_week.friday_short'),
+        LocaleKeys.days_of_week_saturday_short.tr(),
+        LocaleKeys.days_of_week_sunday_short.tr(),
+        LocaleKeys.days_of_week_monday_short.tr(),
+        LocaleKeys.days_of_week_tuesday_short.tr(),
+        LocaleKeys.days_of_week_wednesday_short.tr(),
+        LocaleKeys.days_of_week_thursday_short.tr(),
+        LocaleKeys.days_of_week_friday_short.tr(),
       ];
     }
 
     return [
-      context.tr('days_of_week.monday_short'),
-      context.tr('days_of_week.tuesday_short'),
-      context.tr('days_of_week.wednesday_short'),
-      context.tr('days_of_week.thursday_short'),
-      context.tr('days_of_week.friday_short'),
-      context.tr('days_of_week.saturday_short'),
-      context.tr('days_of_week.sunday_short'),
+      LocaleKeys.days_of_week_monday_short.tr(),
+      LocaleKeys.days_of_week_tuesday_short.tr(),
+      LocaleKeys.days_of_week_wednesday_short.tr(),
+      LocaleKeys.days_of_week_thursday_short.tr(),
+      LocaleKeys.days_of_week_friday_short.tr(),
+      LocaleKeys.days_of_week_saturday_short.tr(),
+      LocaleKeys.days_of_week_sunday_short.tr(),
     ];
   }
 
@@ -296,7 +297,8 @@ class _CustomCalendarViewState extends State<CustomCalendarView> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.title ?? context.tr('select_date'),
+                    widget.title ??
+                        LocaleKeys.custom_date_picker_select_date.tr(),
                     style: context.f18sb.copyWith(color: text),
                   ),
                 ),
@@ -477,8 +479,12 @@ class _CustomCalendarViewState extends State<CustomCalendarView> {
             _ActionRow(
               primary: primary,
               text: text,
-              confirmText: widget.confirmTitle ?? context.tr('done'),
-              cancelText: widget.cancelTitle ?? context.tr('cancel'),
+              confirmText:
+                  widget.confirmTitle ??
+                  LocaleKeys.custom_date_picker_done.tr(),
+              cancelText:
+                  widget.cancelTitle ??
+                  LocaleKeys.custom_date_picker_cancel.tr(),
               onConfirm: () {
                 HapticFeedback.mediumImpact();
                 widget.onDateSelected(_selectedDate);

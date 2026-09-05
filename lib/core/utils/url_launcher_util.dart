@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../common/app/app_snack_bar.dart';
 import '../helpers/app_logger.dart';
+import '../localization/locale_keys.g.dart';
 
 class UrlLauncherUtil {
   const UrlLauncherUtil._();
@@ -23,7 +24,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'url_not_available'.tr(),
+          message: LocaleKeys.url_launcher_util_url_not_available.tr(),
           type: AppSnackBarType.error,
         );
 
@@ -41,7 +42,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'cannot_open_url'.tr(),
+          message: LocaleKeys.url_launcher_util_cannot_open_url.tr(),
           type: AppSnackBarType.error,
         );
       }
@@ -52,7 +53,7 @@ class UrlLauncherUtil {
 
       AppSnackBar.show(
         context: context,
-        message: 'error_opening_url'.tr(),
+        message: LocaleKeys.url_launcher_util_error_opening_url.tr(),
         type: AppSnackBarType.error,
       );
     }
@@ -73,7 +74,8 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'whatsapp_number_not_available'.tr(),
+          message: LocaleKeys.url_launcher_util_whatsapp_number_not_available
+              .tr(),
           type: AppSnackBarType.error,
         );
 
@@ -102,7 +104,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'cannot_open_whatsapp'.tr(),
+          message: LocaleKeys.url_launcher_util_cannot_open_whatsapp.tr(),
           type: AppSnackBarType.error,
         );
       }
@@ -113,7 +115,7 @@ class UrlLauncherUtil {
 
       AppSnackBar.show(
         context: context,
-        message: 'error_opening_whatsapp'.tr(),
+        message: LocaleKeys.url_launcher_util_error_opening_whatsapp.tr(),
         type: AppSnackBarType.error,
       );
     }
@@ -137,7 +139,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'email_not_available'.tr(),
+          message: LocaleKeys.url_launcher_util_email_not_available.tr(),
           type: AppSnackBarType.error,
         );
 
@@ -177,7 +179,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'cannot_open_email'.tr(),
+          message: LocaleKeys.url_launcher_util_cannot_open_email.tr(),
           type: AppSnackBarType.error,
         );
       }
@@ -188,7 +190,7 @@ class UrlLauncherUtil {
 
       AppSnackBar.show(
         context: context,
-        message: 'error_opening_email'.tr(),
+        message: LocaleKeys.url_launcher_util_error_opening_email.tr(),
         type: AppSnackBarType.error,
       );
     }
@@ -208,7 +210,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'phone_number_not_available'.tr(),
+          message: LocaleKeys.url_launcher_util_phone_number_not_available.tr(),
           type: AppSnackBarType.error,
         );
 
@@ -231,7 +233,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'cannot_open_phone'.tr(),
+          message: LocaleKeys.url_launcher_util_cannot_open_phone.tr(),
           type: AppSnackBarType.error,
         );
       }
@@ -242,7 +244,7 @@ class UrlLauncherUtil {
 
       AppSnackBar.show(
         context: context,
-        message: 'error_opening_phone'.tr(),
+        message: LocaleKeys.url_launcher_util_error_opening_phone.tr(),
         type: AppSnackBarType.error,
       );
     }
@@ -263,7 +265,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'phone_number_not_available'.tr(),
+          message: LocaleKeys.url_launcher_util_phone_number_not_available.tr(),
           type: AppSnackBarType.error,
         );
 
@@ -292,7 +294,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'cannot_open_sms'.tr(),
+          message: LocaleKeys.url_launcher_util_cannot_open_sms.tr(),
           type: AppSnackBarType.error,
         );
       }
@@ -303,7 +305,7 @@ class UrlLauncherUtil {
 
       AppSnackBar.show(
         context: context,
-        message: 'error_opening_sms'.tr(),
+        message: LocaleKeys.url_launcher_util_error_opening_sms.tr(),
         type: AppSnackBarType.error,
       );
     }
@@ -337,7 +339,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'location_not_available'.tr(),
+          message: LocaleKeys.url_launcher_util_location_not_available.tr(),
           type: AppSnackBarType.error,
         );
 
@@ -353,7 +355,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'cannot_open_maps'.tr(),
+          message: LocaleKeys.url_launcher_util_cannot_open_maps.tr(),
           type: AppSnackBarType.error,
         );
       }
@@ -364,7 +366,7 @@ class UrlLauncherUtil {
 
       AppSnackBar.show(
         context: context,
-        message: 'error_opening_maps'.tr(),
+        message: LocaleKeys.url_launcher_util_error_opening_maps.tr(),
         type: AppSnackBarType.error,
       );
     }
@@ -385,7 +387,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'url_not_available'.tr(),
+          message: LocaleKeys.url_launcher_util_url_not_available.tr(),
           type: AppSnackBarType.error,
         );
 
@@ -412,7 +414,7 @@ class UrlLauncherUtil {
 
         AppSnackBar.show(
           context: context,
-          message: 'cannot_open_url'.tr(),
+          message: LocaleKeys.url_launcher_util_cannot_open_url.tr(),
           type: AppSnackBarType.error,
         );
       }
@@ -423,7 +425,7 @@ class UrlLauncherUtil {
 
       AppSnackBar.show(
         context: context,
-        message: 'error_opening_url'.tr(),
+        message: LocaleKeys.url_launcher_util_error_opening_url.tr(),
         type: AppSnackBarType.error,
       );
     }

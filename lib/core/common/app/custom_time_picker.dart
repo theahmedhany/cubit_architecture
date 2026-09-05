@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/spacing.dart';
+import '../../localization/locale_keys.g.dart';
 import '../../theme/app_texts/app_text_styles.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
 import 'app_button.dart';
@@ -183,7 +184,9 @@ class _TimePickerContentState extends State<_TimePickerContent> {
     } else {
       final hStr = _hour.toString().padLeft(2, '0');
 
-      final period = _isAm ? 'am_short'.tr() : 'pm_short'.tr();
+      final period = _isAm
+          ? LocaleKeys.custom_time_picker_am_short.tr()
+          : LocaleKeys.custom_time_picker_pm_short.tr();
 
       return '$hStr : $mStr  $period';
     }
@@ -254,7 +257,8 @@ class _TimePickerContentState extends State<_TimePickerContent> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.title ?? context.tr('select_time'),
+                    widget.title ??
+                        LocaleKeys.custom_time_picker_select_time.tr(),
                     style: context.f18sb.copyWith(color: text),
                   ),
                 ),
@@ -462,7 +466,9 @@ class _TimePickerContentState extends State<_TimePickerContent> {
                 Expanded(
                   flex: 3,
                   child: AppButton(
-                    title: widget.confirmTitle ?? context.tr('done'),
+                    title:
+                        widget.confirmTitle ??
+                        LocaleKeys.custom_time_picker_done.tr(),
                     buttonHeight: 48.radius,
                     buttonColor: primary,
                     titleColor: themeColors.neutral0,
@@ -479,7 +485,9 @@ class _TimePickerContentState extends State<_TimePickerContent> {
                 Expanded(
                   flex: 2,
                   child: AppButton(
-                    title: widget.cancelTitle ?? context.tr('cancel'),
+                    title:
+                        widget.cancelTitle ??
+                        LocaleKeys.custom_time_picker_cancel.tr(),
                     buttonHeight: 48.radius,
                     buttonColor: Colors.transparent,
                     titleColor: text.withValues(alpha: 0.6),
@@ -591,7 +599,7 @@ class _AmPmSwitcher extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  context.tr('am'),
+                  LocaleKeys.custom_time_picker_am.tr(),
                   style: context.f14sb.copyWith(
                     color: isAm
                         ? themeColors.white
@@ -624,7 +632,7 @@ class _AmPmSwitcher extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  context.tr('pm'),
+                  LocaleKeys.custom_time_picker_pm.tr(),
                   style: context.f14sb.copyWith(
                     color: !isAm
                         ? themeColors.white
