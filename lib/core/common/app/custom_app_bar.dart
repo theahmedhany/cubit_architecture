@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../helpers/asset_helper.dart';
@@ -13,8 +14,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     this.onBackPressed,
     this.title,
+    this.titleWidget,
     this.subtitle,
     this.leading,
+    this.leadingWidth,
+    this.titleSpacing,
     this.backButtonIcon,
     this.actions,
     this.centerTitle = false,
@@ -27,10 +31,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.elevation = 0,
     this.showDivider = false,
     this.toolbarHeight,
+    this.systemOverlayStyle,
   });
 
   final VoidCallback? onBackPressed;
   final String? title;
+  final Widget? titleWidget;
   final bool centerTitle;
   final TextStyle? titleTextStyle;
   final String? subtitle;
@@ -39,12 +45,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color? backButtonColor;
   final bool showBackButton;
   final Widget? leading;
+  final double? leadingWidth;
+  final double? titleSpacing;
   final List<Widget>? actions;
   final Color? backgroundColor;
   final bool forceMaterialTransparency;
   final double elevation;
   final bool showDivider;
   final double? toolbarHeight;
+  final SystemUiOverlayStyle? systemOverlayStyle;
 
   bool get _canPop => onBackPressed != null || RouteManager.canPop();
 
@@ -71,7 +80,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       icon:
           backButtonIcon ??
           SvgPicture.asset(
-            AssetHelper.iconSVGPath('circle_arrow_left'),
+            AssetHelper.iconSVGPath('arrow_left'),
             matchTextDirection: true,
             width: 24.radius,
             height: 24.radius,
@@ -81,11 +90,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildTitle(BuildContext context) {
+    if (titleWidget != null) {
+      return titleWidget!;
+    }
+
     if (title == null) {
       return const SizedBox.shrink();
     }
 
-    final titleWidget = Text(
+    final titleWidgetText = Text(
       title!,
       style: titleTextStyle ?? context.f14sb,
       overflow: TextOverflow.ellipsis,
@@ -93,7 +106,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
 
     if (subtitle == null) {
-      return titleWidget;
+      return titleWidgetText;
     }
 
     return Column(
@@ -102,7 +115,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ? CrossAxisAlignment.center
           : CrossAxisAlignment.start,
       children: [
-        titleWidget,
+        titleWidgetText,
 
         verticalGap(2),
 
@@ -121,6 +134,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
+      systemOverlayStyle: systemOverlayStyle,
       backgroundColor: backgroundColor ?? Colors.transparent,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -130,7 +144,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       scrolledUnderElevation: elevation,
       centerTitle: centerTitle,
       toolbarHeight: toolbarHeight ?? kToolbarHeight,
+      titleSpacing: titleSpacing,
       title: _buildTitle(context),
+      leadingWidth: leadingWidth,
       leading: leading ?? (showBackButton ? _buildBackButton(context) : null),
       actions: actions,
       bottom: showDivider

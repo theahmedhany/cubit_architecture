@@ -52,6 +52,9 @@ class AppTextFormField extends StatefulWidget {
     this.minLines,
     this.maxLength,
     this.errorMaxLines = 2,
+    this.textDirection,
+    this.hintTextDirection,
+    this.textAlign = TextAlign.start,
     this.validator,
     this.onTap,
     this.onChanged,
@@ -102,6 +105,9 @@ class AppTextFormField extends StatefulWidget {
   final int? minLines;
   final int? maxLength;
   final int errorMaxLines;
+  final TextDirection? textDirection;
+  final TextDirection? hintTextDirection;
+  final TextAlign textAlign;
   final String? Function(String?)? validator;
   final VoidCallback? onTap;
   final ValueChanged<String>? onChanged;
@@ -158,6 +164,25 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
     setState(() => _obscureText = !_obscureText);
   }
 
+  String _formatHint(String hint) {
+    final trimmed = hint.trimLeft();
+
+    if ((trimmed.startsWith('+') ||
+            RegExp(r'^[a-zA-Z0-9@._-]').hasMatch(trimmed)) &&
+        !trimmed.startsWith('\u200E')) {
+      return '\u200E$hint';
+    }
+
+    return hint;
+  }
+
+  List<TextInputFormatter>? _effectiveInputFormatters() {
+    return [
+      const _LtrTextFormatter(),
+      if (widget.inputFormatters != null) ...widget.inputFormatters!,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.customAppColors;
@@ -184,7 +209,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           keyboardType: widget.keyboardType,
           textInputAction: widget.textInputAction,
           textCapitalization: widget.textCapitalization,
-          inputFormatters: widget.inputFormatters,
+          inputFormatters: _effectiveInputFormatters(),
 
           maxLines: widget.isPassword ? 1 : widget.maxLines,
           minLines: widget.minLines,
@@ -197,11 +222,21 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           obscureText: _obscureText,
           obscuringCharacter: '•',
 
-          validator: widget.validator,
+          validator: widget.validator != null
+              ? (value) => widget.validator!(value?.replaceAll('\u200E', ''))
+              : null,
 
           onTap: widget.onTap,
-          onChanged: widget.onChanged,
-          onFieldSubmitted: widget.onFieldSubmitted,
+          onChanged: widget.onChanged != null
+              ? (value) => widget.onChanged!(value.replaceAll('\u200E', ''))
+              : null,
+          onFieldSubmitted: widget.onFieldSubmitted != null
+              ? (value) =>
+                    widget.onFieldSubmitted!(value.replaceAll('\u200E', ''))
+              : null,
+
+          textDirection: widget.textDirection,
+          textAlign: widget.textAlign,
 
           autovalidateMode: AutovalidateMode.onUserInteraction,
           onTapOutside: (_) => MediaHelper.dismissKeyboard(context),
@@ -215,7 +250,8 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           ),
 
           decoration: InputDecoration(
-            hintText: widget.hintText,
+            hintText: _formatHint(widget.hintText),
+            hintTextDirection: widget.hintTextDirection,
 
             helperText: widget.helperText,
             helperMaxLines: 2,
@@ -371,5 +407,54 @@ class _TitleSection extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _LtrTextFormatter extends TextInputFormatter {
+  const _LtrTextFormatter();
+
+  static final _ltrStartRegex = RegExp(r'^[a-zA-Z0-9+@._-]');
+  static final _arabicStartRegex = RegExp(r'^[\u0600-\u06FF]');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    final text = newValue.text;
+
+    if (_ltrStartRegex.hasMatch(text) && !text.startsWith('\u200E')) {
+      final updatedText = '\u200E$text';
+      final offsetDiff = updatedText.length - text.length;
+
+      return newValue.copyWith(
+        text: updatedText,
+        selection: TextSelection.collapsed(
+          offset: (newValue.selection.end + offsetDiff).clamp(
+            0,
+            updatedText.length,
+          ),
+        ),
+      );
+    }
+
+    if (text.startsWith('\u200E') && text.length > 1) {
+      final afterMark = text.substring(1);
+
+      if (_arabicStartRegex.hasMatch(afterMark)) {
+        final updatedText = afterMark;
+
+        return newValue.copyWith(
+          text: updatedText,
+          selection: TextSelection.collapsed(
+            offset: (newValue.selection.end - 1).clamp(0, updatedText.length),
+          ),
+        );
+      }
+    }
+
+    return newValue;
   }
 }

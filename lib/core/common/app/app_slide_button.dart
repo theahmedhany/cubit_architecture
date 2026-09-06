@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/spacing.dart';
+import '../../localization/locale_keys.g.dart';
 import '../../theme/app_texts/app_text_styles.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
 import 'app_loading_indicator.dart';
@@ -399,7 +400,9 @@ class AppSlideButtonState extends State<AppSlideButton>
                                       child: _DoneOverlay(
                                         doneText:
                                             widget.doneText ??
-                                            context.tr('done'),
+                                            context.tr(
+                                              LocaleKeys.app_slide_button_done,
+                                            ),
                                         textStyle: widget.textStyle,
                                       ),
                                     ),
