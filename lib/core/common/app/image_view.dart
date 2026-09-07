@@ -184,7 +184,6 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
             ),
           ),
 
-          // Top Gradient Scrim for guaranteed contrast
           Positioned(
             top: 0,
             left: 0,
@@ -211,7 +210,6 @@ class _ImageViewState extends State<ImageView> with TickerProviderStateMixin {
             ),
           ),
 
-          // Bottom Gradient Scrim for guaranteed contrast
           Positioned(
             bottom: 0,
             left: 0,
@@ -303,7 +301,6 @@ class _ImageViewTopBar extends StatelessWidget {
 
                 const Spacer(),
 
-                // Grouped Toolbar Capsule for Actions
                 ClipRRect(
                   borderRadius: BorderRadius.circular(50.radius),
                   child: BackdropFilter(
@@ -513,7 +510,6 @@ class _ImageViewBottomBar extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Fit Mode info
                       _ImageViewInfoItem(
                         icon: fitIcon,
                         label: fitMode.label(context),
@@ -525,7 +521,6 @@ class _ImageViewBottomBar extends StatelessWidget {
                         color: colors.neutral0.withValues(alpha: 0.18),
                       ),
 
-                      // Scale Percentage info
                       _ImageViewInfoItem(
                         icon: Icons.zoom_in_rounded,
                         label: '${(currentScale * 100).toInt()}%',
@@ -537,7 +532,6 @@ class _ImageViewBottomBar extends StatelessWidget {
                         color: colors.neutral0.withValues(alpha: 0.18),
                       ),
 
-                      // Interactive Reset Button
                       Material(
                         color: colors.neutral0.withValues(alpha: 0.0),
                         child: InkWell(

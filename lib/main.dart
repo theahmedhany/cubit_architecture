@@ -43,13 +43,6 @@ void main() async {
   Bloc.observer = BlocObserverHelper();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
-    ),
-  );
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -67,7 +60,7 @@ void main() async {
     EasyLocalization(
       supportedLocales: AppLanguage.supportedLanguages,
       path: AppLanguage.langPath,
-      startLocale: const Locale(AppLanguage.arCode),
+      startLocale: const Locale(AppLanguage.startLocale),
       fallbackLocale: const Locale(AppLanguage.fallbackLocale),
       saveLocale: true,
       child: const MyApp(),
