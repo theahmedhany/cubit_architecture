@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/spacing.dart';
@@ -153,21 +153,25 @@ class _SlidingUnderlineTabBar extends StatelessWidget {
                   final isSelected = index == selectedIndex;
 
                   return Expanded(
-                    child: CupertinoButton(
-                      onPressed: () => onTabChanged(index),
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      child: Center(
-                        child: AnimatedDefaultTextStyle(
-                          duration: animationDuration,
-                          curve: animationCurve,
-                          style: context.f14sb.copyWith(
-                            color: isSelected ? selectedText : unselectedText,
-                          ),
-                          child: Text(
-                            titles[index],
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => onTabChanged(index),
+                        borderRadius: BorderRadius.circular(10.radius),
+                        splashColor: selectedColor.withValues(alpha: 0.12),
+                        highlightColor: selectedColor.withValues(alpha: 0.04),
+                        child: Center(
+                          child: AnimatedDefaultTextStyle(
+                            duration: animationDuration,
+                            curve: animationCurve,
+                            style: context.f14sb.copyWith(
+                              color: isSelected ? selectedText : unselectedText,
+                            ),
+                            child: Text(
+                              titles[index],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
                       ),
@@ -274,20 +278,24 @@ class _FilledTabBar extends StatelessWidget {
                   final isSelected = index == selectedIndex;
 
                   return Expanded(
-                    child: CupertinoButton(
-                      onPressed: () => onTabChanged(index),
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      child: Center(
-                        child: AnimatedDefaultTextStyle(
-                          duration: animationDuration,
-                          style: context.f14m.copyWith(
-                            fontWeight: isSelected
-                                ? FontWeightHelper.bold
-                                : FontWeightHelper.medium,
-                            color: isSelected ? selectedText : unselectedText,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => onTabChanged(index),
+                        borderRadius: BorderRadius.circular(12.radius),
+                        splashColor: selectedBg.withValues(alpha: 0.15),
+                        highlightColor: Colors.transparent,
+                        child: Center(
+                          child: AnimatedDefaultTextStyle(
+                            duration: animationDuration,
+                            style: context.f14m.copyWith(
+                              fontWeight: isSelected
+                                  ? FontWeightHelper.bold
+                                  : FontWeightHelper.medium,
+                              color: isSelected ? selectedText : unselectedText,
+                            ),
+                            child: Text(titles[index]),
                           ),
-                          child: Text(titles[index]),
                         ),
                       ),
                     ),
@@ -389,49 +397,53 @@ class _BottomBorderTabItem extends StatelessWidget {
         : (unselectedTextColor ?? context.customAppColors.neutral400);
 
     return Expanded(
-      child: CupertinoButton(
-        onPressed: () => onTap(index),
-        padding: EdgeInsets.zero,
-        minimumSize: Size.zero,
-        child: SizedBox.expand(
-          child: AnimatedContainer(
-            duration: animationDuration,
-            curve: animationCurve,
-            padding: EdgeInsets.symmetric(
-              horizontal: isCompact ? 4.width : 8.width,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedScale(
-                  scale: isSelected ? 1.0 : 0.96,
-                  duration: animationDuration,
-                  curve: animationCurve,
-                  child: AnimatedDefaultTextStyle(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onTap(index),
+          borderRadius: BorderRadius.circular(10.radius),
+          splashColor: indicatorColor.withValues(alpha: 0.12),
+          highlightColor: indicatorColor.withValues(alpha: 0.04),
+          child: SizedBox.expand(
+            child: AnimatedContainer(
+              duration: animationDuration,
+              curve: animationCurve,
+              padding: EdgeInsets.symmetric(
+                horizontal: isCompact ? 4.width : 8.width,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedScale(
+                    scale: isSelected ? 1.0 : 0.96,
                     duration: animationDuration,
                     curve: animationCurve,
-                    style: context.f14sb.copyWith(color: textColor),
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: AnimatedDefaultTextStyle(
+                      duration: animationDuration,
+                      curve: animationCurve,
+                      style: context.f14sb.copyWith(color: textColor),
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
-                ),
 
-                verticalGap(8),
+                  verticalGap(8),
 
-                AnimatedContainer(
-                  duration: animationDuration,
-                  curve: animationCurve,
-                  height: 3,
-                  width: isSelected ? 32.width : 0,
-                  decoration: BoxDecoration(
-                    color: indicatorColor,
-                    borderRadius: BorderRadius.circular(100),
+                  AnimatedContainer(
+                    duration: animationDuration,
+                    curve: animationCurve,
+                    height: 3,
+                    width: isSelected ? 32.width : 0,
+                    decoration: BoxDecoration(
+                      color: indicatorColor,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

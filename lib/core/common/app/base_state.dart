@@ -6,6 +6,7 @@ import '../../helpers/asset_helper.dart';
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/media_helper.dart';
 import '../../helpers/spacing.dart';
+import '../../localization/locale_keys.g.dart';
 import '../../theme/app_texts/app_text_styles.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
 import 'app_button.dart';
@@ -69,7 +70,13 @@ class BaseState extends StatelessWidget {
       ? context.customAppColors.danger600
       : context.customAppColors.neutral500;
 
-  String _defaultLottiePath() => _isError ? 'error_state' : 'empty_state';
+  String _defaultLottiePath(BuildContext context) {
+    if (_isError) {
+      return context.isDarkMode ? 'dark_error_state' : 'light_error_state';
+    } else {
+      return context.isDarkMode ? 'dark_empty_state' : 'light_empty_state';
+    }
+  }
 
   double _defaultSize() => 200.radius;
 
@@ -86,7 +93,9 @@ class BaseState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Lottie.asset(
-              AssetHelper.assetLottiePath(lottiePath ?? _defaultLottiePath()),
+              AssetHelper.assetLottiePath(
+                lottiePath ?? _defaultLottiePath(context),
+              ),
               width: size ?? _defaultSize(),
               height: size ?? _defaultSize(),
               fit: BoxFit.contain,
@@ -126,7 +135,8 @@ class BaseState extends StatelessWidget {
 
                       Flexible(
                         child: Text(
-                          retryText ?? context.tr('try_again'),
+                          retryText ??
+                              context.tr(LocaleKeys.base_state_try_again),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: context.f14r.copyWith(
