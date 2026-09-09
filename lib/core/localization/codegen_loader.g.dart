@@ -164,6 +164,21 @@ class CodegenLoader extends AssetLoader{
     "location_not_available": "Location not available",
     "cannot_open_maps": "Cannot open Maps",
     "error_opening_maps": "Error opening Maps"
+  },
+  "file_picker_util": {
+    "title": "Select File",
+    "subtitle": "Choose a file to upload from your device",
+    "file_picker_title": "Device Storage",
+    "file_picker_subtitle": "Browse files, documents & media",
+    "cancel": "Cancel",
+    "remove_file": "Remove",
+    "no_files_selected": "No files selected yet",
+    "pick_single_file": "Pick Single File",
+    "pick_multiple_files": "Pick Multiple Files",
+    "pick_pdf_only": "Pick PDF Document",
+    "selected_files": "Selected Files",
+    "file_size": "Size",
+    "last_modified": "Modified"
   }
 };
 static const Map<String,dynamic> _ar = {
@@ -316,6 +331,21 @@ static const Map<String,dynamic> _ar = {
     "location_not_available": "الموقع غير متاح",
     "cannot_open_maps": "تعذر فتح الخرائط",
     "error_opening_maps": "حدث خطأ أثناء فتح الخرائط"
+  },
+  "file_picker_util": {
+    "title": "اختيار ملف",
+    "subtitle": "اختر ملفًا لرفعه من جهازك",
+    "file_picker_title": "ذاكرة الجهاز",
+    "file_picker_subtitle": "تصفح الملفات والمستندات والوسائط",
+    "cancel": "إلغاء",
+    "remove_file": "حذف",
+    "no_files_selected": "لم يتم اختيار أي ملفات بعد",
+    "pick_single_file": "اختيار ملف واحد",
+    "pick_multiple_files": "اختيار ملفات متعددة",
+    "pick_pdf_only": "اختيار مستند PDF",
+    "selected_files": "الملفات المختارة",
+    "file_size": "الحجم",
+    "last_modified": "تاريخ التعديل"
   }
 };
 static const Map<String, Map<String,dynamic>> mapLocales = {"en": _en, "ar": _ar};
