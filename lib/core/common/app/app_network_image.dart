@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../helpers/asset_helper.dart';
 import '../../helpers/dimensions_helper.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
 import 'app_loading_indicator.dart';
@@ -393,10 +394,16 @@ class _AppNetworkImageErrorFallback extends StatelessWidget {
       ),
       child:
           errorIcon ??
-          Icon(
-            Icons.error_rounded,
-            size: errorIconSize ?? 24.radius,
-            color: errorIconColor ?? context.customAppColors.neutral500,
+          SvgPicture.asset(
+            AssetHelper.iconSVGPath('image_error'),
+            width: errorIconSize ?? 24.radius,
+            height: errorIconSize ?? 24.radius,
+            colorFilter: errorIconColor != null
+                ? ColorFilter.mode(errorIconColor!, BlendMode.srcIn)
+                : ColorFilter.mode(
+                    context.customAppColors.neutral500,
+                    BlendMode.srcIn,
+                  ),
           ),
     );
   }

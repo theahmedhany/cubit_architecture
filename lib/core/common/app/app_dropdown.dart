@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../helpers/dimensions_helper.dart';
 import '../../helpers/spacing.dart';
+import '../../localization/locale_keys.g.dart';
 import '../../theme/app_texts/app_text_styles.dart';
 import '../../theme/app_texts/font_weight_helper.dart';
 import '../../theme/theme_manager/theme_extensions.dart';
@@ -27,7 +28,9 @@ class AppDropdown<T> extends StatefulWidget {
     this.autofocus = false,
     this.searchable = false,
     this.prefixIcon,
+    this.prefixIconConstraints,
     this.suffixIcon,
+    this.suffixIconConstraints,
     this.emptyIcon,
     this.errorIcon,
     this.textStyle,
@@ -68,7 +71,9 @@ class AppDropdown<T> extends StatefulWidget {
   final bool searchable;
   final String hintText;
   final Widget? prefixIcon;
+  final BoxConstraints? prefixIconConstraints;
   final Widget? suffixIcon;
+  final BoxConstraints? suffixIconConstraints;
   final Widget? emptyIcon;
   final Widget? errorIcon;
   final TextStyle? textStyle;
@@ -98,7 +103,8 @@ class AppDropdown<T> extends StatefulWidget {
   State<AppDropdown<T>> createState() => _AppDropdownState<T>();
 }
 
-class _AppDropdownState<T> extends State<AppDropdown<T>> {
+class _AppDropdownState<T> extends State<AppDropdown<T>>
+    with WidgetsBindingObserver {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
@@ -108,8 +114,8 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
   OverlayEntry? _overlayEntry;
   List<T> _filteredItems = [];
   bool _isOpen = false;
-  bool _showAbove = false;
   double? _dropdownWidth;
+  ScrollPosition? _ancestorScrollPosition;
 
   static final double _itemHeight = 48.radius;
   static final double _listPadding = 16.radius;
@@ -127,6 +133,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _filteredItems = widget.items;
     _syncText();
@@ -137,6 +144,37 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
 
     _focusNode.addListener(_handleFocusChange);
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateAncestorScrollListener();
+  }
+
+  void _updateAncestorScrollListener() {
+    final newPosition = Scrollable.maybeOf(context)?.position;
+    if (newPosition != _ancestorScrollPosition) {
+      _ancestorScrollPosition?.removeListener(_onAncestorScroll);
+      _ancestorScrollPosition = newPosition;
+      _ancestorScrollPosition?.addListener(_onAncestorScroll);
+    }
+  }
+
+  void _onAncestorScroll() {
+    if (_isOpen) {
+      _focusNode.unfocus();
+      _closeDropdown();
+    }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (_isOpen) {
+      _updateDropdownWidth();
+      _scheduleOverlayRebuild();
+    }
   }
 
   @override
@@ -178,6 +216,8 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _ancestorScrollPosition?.removeListener(_onAncestorScroll);
     _closeDropdown();
     if (widget.searchable) {
       _controller.removeListener(_onSearchChanged);
@@ -268,26 +308,8 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     });
   }
 
-  bool _computeShowAbove() {
-    final renderBox =
-        _fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return false;
-
-    final position = renderBox.localToGlobal(Offset.zero);
-    final fieldBottom = position.dy + renderBox.size.height;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    final spaceBelow = screenHeight - fieldBottom - _screenMargin;
-    final spaceAbove = position.dy - _screenMargin;
-    final maxH = widget.dropdownMaxHeight ?? 200.radius;
-
-    return spaceBelow < maxH && spaceAbove > spaceBelow;
-  }
-
   void _openDropdown() {
     if (_isOpen) return;
-
-    _showAbove = _computeShowAbove();
 
     if (widget.searchable) {
       final value = _safeValue;
@@ -327,35 +349,68 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     _closeDropdown();
   }
 
-  double _computeDropdownHeight() {
-    final maxH = widget.dropdownMaxHeight ?? 200.radius;
-
-    if (_filteredItems.isEmpty && !widget.isLoadingMore) {
-      return 72.radius;
-    }
-
-    final itemCount = _filteredItems.length + (widget.isLoadingMore ? 1 : 0);
-    final naturalH = itemCount * _itemHeight + _listPadding * 2;
-    return naturalH.clamp(60, maxH);
-  }
-
   OverlayEntry _buildOverlayEntry() {
     final colors = context.customAppColors;
 
     return OverlayEntry(
       builder: (_) {
+        final renderBox =
+            _fieldKey.currentContext?.findRenderObject() as RenderBox?;
+        if (renderBox == null || !renderBox.attached) {
+          return const SizedBox.shrink();
+        }
+
+        final position = renderBox.localToGlobal(Offset.zero);
+        final fieldHeight = renderBox.size.height;
+        final fieldTop = position.dy;
+        final fieldBottom = position.dy + fieldHeight;
+
+        final mediaQuery = MediaQuery.of(context);
+        final screenHeight = mediaQuery.size.height;
+        final keyboardHeight = mediaQuery.viewInsets.bottom;
+        final topPadding = mediaQuery.padding.top;
+        final bottomPadding = mediaQuery.padding.bottom;
+
+        final availableTop = topPadding + _screenMargin;
+        final availableBottom =
+            screenHeight - keyboardHeight - bottomPadding - _screenMargin;
+
+        if (fieldBottom < availableTop || fieldTop > availableBottom) {
+          return const SizedBox.shrink();
+        }
+
+        final spaceBelow = (availableBottom - fieldBottom).clamp(
+          0.0,
+          double.infinity,
+        );
+        final spaceAbove = (fieldTop - availableTop).clamp(
+          0.0,
+          double.infinity,
+        );
+
+        final requestedMaxH = widget.dropdownMaxHeight ?? 200.radius;
+        final showAbove = spaceBelow < requestedMaxH && spaceAbove > spaceBelow;
+
+        final maxAvailableSpace =
+            (showAbove ? spaceAbove : spaceBelow) - _dropdownGap;
+        final effectiveMaxHeight = maxAvailableSpace.clamp(48.0, requestedMaxH);
+
         final displayItems = widget.searchable ? _filteredItems : widget.items;
-        final maxH = widget.dropdownMaxHeight ?? 200.radius;
+        final totalItemCount =
+            displayItems.length + (widget.isLoadingMore ? 1 : 0);
 
         final double dropdownH;
         if (widget.searchable) {
-          dropdownH = _computeDropdownHeight();
+          if (displayItems.isEmpty && !widget.isLoadingMore) {
+            dropdownH = 56.radius.clamp(48.0, effectiveMaxHeight);
+          } else {
+            final naturalH = totalItemCount * _itemHeight + _listPadding * 2;
+            dropdownH = naturalH.clamp(48.0, effectiveMaxHeight);
+          }
         } else {
-          dropdownH = maxH;
+          dropdownH = effectiveMaxHeight;
         }
 
-        final totalItemCount =
-            displayItems.length + (widget.isLoadingMore ? 1 : 0);
         final showScrollbar = totalItemCount * _itemHeight > dropdownH;
 
         return GestureDetector(
@@ -371,13 +426,13 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
               CompositedTransformFollower(
                 link: _layerLink,
                 showWhenUnlinked: false,
-                targetAnchor: _showAbove
+                targetAnchor: showAbove
                     ? Alignment.topLeft
                     : Alignment.bottomLeft,
-                followerAnchor: _showAbove
+                followerAnchor: showAbove
                     ? Alignment.bottomLeft
                     : Alignment.topLeft,
-                offset: Offset(0, _showAbove ? -_dropdownGap : _dropdownGap),
+                offset: Offset(0, showAbove ? -_dropdownGap : _dropdownGap),
                 child: Material(
                   color: Colors.transparent,
                   child: _DropdownContainer(
@@ -555,21 +610,22 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
       isDense: true,
       contentPadding: defaultContentPadding,
       hintText: widget.isError
-          ? context.tr('there_is_something_went_wrong')
+          ? LocaleKeys.app_drop_down_there_is_something_went_wrong.tr()
           : widget._isEmpty
-          ? context.tr('no_data_available')
+          ? LocaleKeys.app_drop_down_no_data_available.tr()
           : widget.hintText,
       hintStyle: defaultHintStyle,
       prefixIcon: widget.prefixIcon,
-      prefixIconConstraints: BoxConstraints.tightFor(
-        width: widget.prefixIcon != null ? 38.radius : 0,
-        height: 38.radius,
-      ),
+      prefixIconConstraints:
+          widget.prefixIconConstraints ??
+          BoxConstraints.tightFor(
+            width: widget.prefixIcon != null ? 38.radius : 0,
+            height: 38.radius,
+          ),
       suffixIcon: _buildSuffixIcon(),
-      suffixIconConstraints: BoxConstraints.tightFor(
-        width: 44.radius,
-        height: 44.radius,
-      ),
+      suffixIconConstraints:
+          widget.suffixIconConstraints ??
+          BoxConstraints.tightFor(width: 44.radius, height: 44.radius),
       border: _border(radius, enabledBorderColor, borderW),
       enabledBorder: _border(
         radius,
@@ -629,7 +685,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
 
     return widget.suffixIcon ??
         Padding(
-          padding: EdgeInsetsDirectional.only(end: 12.radius),
+          padding: EdgeInsetsDirectional.only(end: 6.radius),
           child: AnimatedRotation(
             turns: _isOpen ? 0.5 : 0.0,
             duration: const Duration(milliseconds: 200),
@@ -742,7 +798,7 @@ class _DropdownList<T> extends StatelessWidget {
         height: 56.radius,
         child: Center(
           child: Text(
-            context.tr('no_results_found'),
+            LocaleKeys.app_drop_down_no_results_found.tr(),
             style: context.f14r.copyWith(
               color: context.customAppColors.neutral400,
             ),
