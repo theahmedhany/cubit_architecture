@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 
 import '../helpers/app_logger.dart';
+import '../localization/locale_keys.g.dart';
 import 'api_error_handler.dart';
 import 'api_error_model.dart';
 import 'api_result.dart';
@@ -124,7 +125,9 @@ class NetworkStatusInfoImpl implements NetworkStatusInfo {
 
       if (!connected) {
         return ApiResult.failure(
-          ApiErrorModel(message: 'no_internet_connection'.tr()),
+          ApiErrorModel(
+            message: LocaleKeys.api_error_handling_no_internet_connection.tr(),
+          ),
         );
       }
     }
@@ -149,7 +152,9 @@ class NetworkStatusInfoImpl implements NetworkStatusInfo {
         return ApiResult.success(response);
       } on TimeoutException {
         return ApiResult.failure(
-          ApiErrorModel(message: 'request_timeout'.tr()),
+          ApiErrorModel(
+            message: LocaleKeys.api_error_handling_request_timeout.tr(),
+          ),
         );
       } on DioException catch (e, stackTrace) {
         if (logRequest && kDebugMode) {
