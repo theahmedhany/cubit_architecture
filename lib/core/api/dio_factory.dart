@@ -12,6 +12,8 @@ import 'api_constants.dart';
 class DioFactory {
   DioFactory._();
 
+  static String get baseUrl => ApiConstants.baseUrl;
+
   static Dio? _dio;
   static CancelToken _cancelToken = CancelToken();
 
@@ -24,7 +26,7 @@ class DioFactory {
 
     final dio = Dio(
       BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
+        baseUrl: DioFactory.baseUrl,
         connectTimeout: timeout,
         receiveTimeout: timeout,
         sendTimeout: timeout,
